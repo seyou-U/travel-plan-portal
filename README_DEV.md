@@ -36,7 +36,9 @@ CIにて設定されているが、ローカル環境動作用に各コマンド
 `docker compose exec php ./vendor/bin/phpstan analyse -c phpstan.neon`
 
 ・React Unitテスト(Vitest)<br>
-`docker compose exec web sh -lc "cd /app && npm run test:run"`
+`cd frontend`<br>
+`npm run test:run`
 
 ・Reactのリンター(ESLint)<br>
-`docker compose exec web sh -lc "cd /app && npm run lint"`
+`cd frontend`<br>
+`npm run lint`
