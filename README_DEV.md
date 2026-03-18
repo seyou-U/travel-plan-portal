@@ -16,6 +16,9 @@
 
 4. 動作確認<br>
 フロント:<br>
+下記コマンドを順に実行したのち
+`cd frontend`<br>
+`npm run dev`<br>
 http://localhost:5173 を開くことができればOK<br><br>
 API:<br>
 Postmanでhttp://localhost:8080/api/health を叩き、レスポンス "ok": trueと表示されればOK
@@ -37,4 +40,3 @@ CIにて設定されているが、ローカル環境動作用に各コマンド
 
 ・Reactのリンター(ESLint)<br>
 `docker compose exec web sh -lc "cd /app && npm run lint"`
-
