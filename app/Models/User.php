@@ -14,28 +14,31 @@ class User extends Authenticatable
     use HasFactory, Notifiable;
 
     /**
-     * The attributes that are mass assignable.
+     * 作成もしくは更新時にフィールドへの代入を許可する属性
      *
      * @var list<string>
      */
     protected $fillable = [
+        'uuid',
         'name',
         'email',
         'password',
+        'icon_image_path',
+        'email_verified_at',
     ];
 
     /**
-     * The attributes that should be hidden for serialization.
+     * シリアル化の際にモデルから除外する属性
      *
      * @var list<string>
      */
     protected $hidden = [
+        'id',
         'password',
-        'remember_token',
     ];
 
     /**
-     * Get the attributes that should be cast.
+     * データを自動変換する属性
      *
      * @return array<string, string>
      */
