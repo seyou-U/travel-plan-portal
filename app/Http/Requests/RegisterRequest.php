@@ -3,9 +3,9 @@
 namespace App\Http\Requests;
 
 use Illuminate\Contracts\Validation\ValidationRule;
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
-use Illuminate\Contracts\Validation\Validator;
 
 class RegisterRequest extends FormRequest
 {
@@ -25,9 +25,32 @@ class RegisterRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'unique:users'],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'name' => ['required', 'string', 'max:50'],
+            'email' => ['required', 'string', 'max:255', 'email', 'unique:users,email'],
+            'password' => ['required', 'string', 'min:8', 'max:255', 'confirmed'],
+        ];
+    }
+
+    /**
+     * バリデーションメッセージを設定する
+     *
+     * @return array<string, ValidationRule|array<mixed>|string>
+     */
+    public function messages(): array
+    {
+        return [
+            'name.required' => '名前は必須です。',
+            'name.max' => '名前は50文字以内で入力してください。',
+
+            'email.required' => 'メールアドレスは必須です。',
+            'email.max' => 'メールアドレスは255文字以内で入力してください。',
+            'email.email' => 'メールアドレスの形式が正しくありません。',
+            'email.unique' => 'すでにメールアドレスが使用されています。',
+
+            'password.required' => 'パスワードは必須です。',
+            'password.min' => 'パスワードは8文字以上で入力してください。',
+            'password.max' => 'パスワードは255文字以内で入力してください。',
+            'password.confirmed' => 'パスワード確認用のパスワードが一致しません。',
         ];
     }
 

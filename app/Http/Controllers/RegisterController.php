@@ -19,7 +19,9 @@ class RegisterController extends Controller
         ]);
 
         Auth::login($user);
-        $request->session()->regenerate();
+        if ($request->hasSession()) {
+            $request->session()->regenerate();
+        }
 
         return response()->json([
             'message' => '新規登録が完了しました。',
