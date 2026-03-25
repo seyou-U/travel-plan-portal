@@ -39,6 +39,10 @@ CIにて設定されているが、ローカル環境動作用に各コマンド
 `cd frontend`<br>
 `npm run test:run`
 
+・Reactのフォーマッタ<br>
+`cd frontend`<br>
+`npm run format`
+
 ・Reactのリンター(ESLint)<br>
 `cd frontend`<br>
 `npm run lint`
