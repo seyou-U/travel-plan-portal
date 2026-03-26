@@ -4,12 +4,12 @@ export function TopHeader() {
   return (
     <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
       <div className="mx-auto flex h-20 w-full max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-        <a className="inline-flex items-center gap-2 text-lg font-bold" href="/">
+        <Link className="inline-flex items-center gap-2 text-lg font-bold" to="/">
           <span className="text-sm text-teal-600" aria-hidden="true">
             ●
           </span>
           <span>Travel Plan Portal</span>
-        </a>
+        </Link>
         <div className="flex items-center gap-2 sm:gap-3">
           <Link
             to="/login"
@@ -19,7 +19,7 @@ export function TopHeader() {
             ログイン
           </Link>
           <Link
-            to="/signup"
+            to="/register"
             className="rounded-full bg-teal-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-teal-600/20 transition hover:bg-teal-700"
             type="button"
           >

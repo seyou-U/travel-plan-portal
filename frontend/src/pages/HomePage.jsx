@@ -1,12 +1,12 @@
 import { BottomSection } from '../components/home/BottomSection';
 import { FeaturesSection } from '../components/home/FeaturesSection';
-import { TopSection } from '../components/home/TopSection';
+import { UpperSection } from '../components/home/UpperSection';
 
-// ログイン前TOP画面
-export default function LoadingPage() {
+// ログイン前HOME画面
+export default function HomePage() {
   return (
     <>
-      <TopSection />
+      <UpperSection />
       <FeaturesSection />
       <BottomSection />
     </>

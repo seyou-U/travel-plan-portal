@@ -1,6 +1,6 @@
 import top from '../../assets/top.png';
 
-export function TopSection() {
+export function UpperSection() {
   return (
     <section className="py-14 sm:py-16 lg:py-20">
       <div className="mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-10 px-4 sm:px-6 lg:grid-cols-2 lg:gap-14 lg:px-8">
