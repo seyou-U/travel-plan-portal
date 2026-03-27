@@ -1,3 +1,7 @@
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/useAuth';
+
 const inputClassName =
   'w-full rounded-md border border-slate-200 bg-slate-50 px-10 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100';
 
@@ -43,7 +47,58 @@ function EyeIcon() {
   );
 }
 
+function getErrorMessage(error) {
+  const fieldErrors = error?.data?.errors;
+
+  if (fieldErrors && typeof fieldErrors === 'object') {
+    const firstFieldMessage = Object.values(fieldErrors).find(
+      (messages) => Array.isArray(messages) && messages.length > 0,
+    );
+
+    if (Array.isArray(firstFieldMessage) && firstFieldMessage[0]) {
+      return firstFieldMessage[0];
+    }
+  }
+
+  return error?.data?.message ?? '新規登録に失敗しました。入力内容を確認してください。';
+}
+
 export default function RegisterPage() {
+  const navigate = useNavigate();
+  const { register } = useAuth();
+  const [showPassword, setShowPassword] = useState(false);
+  const [showPasswordConfirmation, setShowPasswordConfirmation] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [formValues, setFormValues] = useState({
+    name: '',
+    email: '',
+    password: '',
+    password_confirmation: '',
+  });
+
+  const handleChange = (event) => {
+    setFormValues((prev) => ({
+      ...prev,
+      [event.target.name]: event.target.value,
+    }));
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setSubmitting(true);
+    setErrorMessage('');
+
+    try {
+      await register(formValues);
+      navigate('/top', { replace: true });
+    } catch (error) {
+      setErrorMessage(getErrorMessage(error));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-100 px-4 py-10 text-slate-900 sm:px-6">
       <div className="mx-auto flex w-full max-w-sm flex-col items-center">
@@ -63,7 +118,7 @@ export default function RegisterPage() {
             </h1>
           </div>
 
-          <form className="mt-6 space-y-4">
+          <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
             <div>
               <label
                 className="mb-1.5 block text-xs font-bold text-slate-700"
@@ -77,9 +132,14 @@ export default function RegisterPage() {
                 </span>
                 <input
                   id="register-name"
+                  name="name"
                   type="text"
                   className={inputClassName}
                   placeholder="例：山田 太郎"
+                  value={formValues.name}
+                  onChange={handleChange}
+                  autoComplete="name"
+                  required
                 />
               </div>
             </div>
@@ -97,9 +157,14 @@ export default function RegisterPage() {
                 </span>
                 <input
                   id="register-email"
+                  name="email"
                   type="email"
                   className={inputClassName}
                   placeholder="example@travelplan.jp"
+                  value={formValues.email}
+                  onChange={handleChange}
+                  autoComplete="email"
+                  required
                 />
               </div>
             </div>
@@ -117,14 +182,20 @@ export default function RegisterPage() {
                 </span>
                 <input
                   id="register-password"
-                  type="password"
+                  name="password"
+                  type={showPassword ? 'text' : 'password'}
                   className={inputClassName}
                   placeholder="8文字以上の英数字"
+                  value={formValues.password}
+                  onChange={handleChange}
+                  autoComplete="new-password"
+                  required
                 />
                 <button
                   type="button"
                   className="absolute inset-y-0 right-3 flex items-center"
                   aria-label="パスワードの表示切り替え"
+                  onClick={() => setShowPassword((prev) => !prev)}
                 >
                   <EyeIcon />
                 </button>
@@ -144,41 +215,46 @@ export default function RegisterPage() {
                 </span>
                 <input
                   id="register-password-confirmation"
-                  type="password"
+                  name="password_confirmation"
+                  type={showPasswordConfirmation ? 'text' : 'password'}
                   className={inputClassName}
                   placeholder="同じパスワードを入力"
+                  value={formValues.password_confirmation}
+                  onChange={handleChange}
+                  autoComplete="new-password"
+                  required
                 />
                 <button
                   type="button"
                   className="absolute inset-y-0 right-3 flex items-center"
                   aria-label="確認用パスワードの表示切り替え"
+                  onClick={() => setShowPasswordConfirmation((prev) => !prev)}
                 >
                   <EyeIcon />
                 </button>
               </div>
             </div>
 
+            {errorMessage ? (
+              <p className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-600">
+                {errorMessage}
+              </p>
+            ) : null}
+
             <button
               type="submit"
-              className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-teal-600 px-4 py-2.5 text-sm font-bold text-white shadow-md shadow-teal-700/30 transition hover:bg-teal-700"
+              disabled={submitting}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-teal-600 px-4 py-2.5 text-sm font-bold text-white shadow-md shadow-teal-700/30 transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-70"
             >
-              アカウントを作成する
-              <span aria-hidden="true">→</span>
+              {submitting ? '登録中...' : 'アカウントを作成する'}
             </button>
           </form>
 
-          <p className="mt-6 text-center text-[11px] leading-relaxed text-slate-500">
-            登録することで、当社の
-            <a href="#" className="font-semibold text-teal-700 hover:text-teal-800">
-              {' '}
-              利用規約
-            </a>
-            および
-            <a href="#" className="font-semibold text-teal-700 hover:text-teal-800">
-              {' '}
-              プライバシーポリシー
-            </a>
-            に同意したことになります。
+          <p className="mt-6 text-center text-xs text-slate-500">
+            すでにアカウントをお持ちですか？{' '}
+            <Link to="/login" className="font-bold text-teal-700 hover:text-teal-800">
+              ログインはこちら
+            </Link>
           </p>
         </section>
       </div>
