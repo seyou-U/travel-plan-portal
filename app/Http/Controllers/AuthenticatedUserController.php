@@ -4,12 +4,18 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 
 class AuthenticatedUserController extends Controller
 {
-    public function show(Request $request): JsonResponse
+    public function show(Request $request): JsonResponse|Response
     {
         $user = $request->user();
+
+        if ($user === null) {
+            return response()->noContent();
+        }
+
         $iconImageUrl = null;
 
         if ($user->icon_image_path !== null) {
