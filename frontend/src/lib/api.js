@@ -78,9 +78,7 @@ function safeJsonParse(text) {
 }
 
 function getCsrfTokenFromCookie() {
-  const cookie = document.cookie
-    .split('; ')
-    .find((row) => row.startsWith(`${CSRF_COOKIE_NAME}=`));
+  const cookie = document.cookie.split('; ').find((row) => row.startsWith(`${CSRF_COOKIE_NAME}=`));
 
   if (!cookie) return null;
 
