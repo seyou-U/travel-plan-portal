@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/useAuth';
-import mountainAndForestScenery from '../assets/mountain-and-forest-scenery.jpg';
+import mountainAndForestScenery from '../images/mountain-and-forest-scenery.png';
 
 const inputClassName =
   'w-full rounded-md border border-slate-200 bg-slate-50 px-10 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100';
