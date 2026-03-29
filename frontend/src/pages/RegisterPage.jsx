@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/useAuth';
+import mountainAndForestScenery from '../assets/mountain-and-forest-scenery.jpg';
 
 const inputClassName =
   'w-full rounded-md border border-slate-200 bg-slate-50 px-10 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100';
@@ -109,8 +110,8 @@ export default function RegisterPage() {
           <div className="relative overflow-hidden rounded-lg">
             <img
               className="h-20 w-full object-cover"
-              src="https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=1200&q=80"
-              alt="海と緑の景色"
+              src={mountainAndForestScenery}
+              alt="山と森の景色"
             />
             <div className="absolute inset-0 bg-slate-900/30" />
             <h1 className="absolute inset-0 grid place-items-center text-3xl font-black text-white">
