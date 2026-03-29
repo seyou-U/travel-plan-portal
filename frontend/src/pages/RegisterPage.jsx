@@ -39,7 +39,9 @@ export default function RegisterPage() {
       await register(formValues);
       navigate('/top', { replace: true });
     } catch (error) {
-      setErrorMessage(getErrorMessage(error, '新規登録に失敗しました。入力内容を確認してください。'));
+      setErrorMessage(
+        getErrorMessage(error, '新規登録に失敗しました。入力内容を確認してください。'),
+      );
     } finally {
       setSubmitting(false);
     }

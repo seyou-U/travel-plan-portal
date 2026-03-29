@@ -45,7 +45,9 @@ export default function LoginPage() {
       await login(formValues);
       navigate('/top', { replace: true });
     } catch (error) {
-      setErrorMessage(getErrorMessage(error, 'ログインに失敗しました。入力内容を確認してください。'));
+      setErrorMessage(
+        getErrorMessage(error, 'ログインに失敗しました。入力内容を確認してください。'),
+      );
     } finally {
       setSubmitting(false);
     }
