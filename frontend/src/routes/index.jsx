@@ -49,7 +49,7 @@ export const router = createBrowserRouter([
         ),
         children: [{ index: true, element: <MyPlanPage /> }],
       },
-       {
+      {
         path: 'plan',
         element: (
           <RequireAuth>
