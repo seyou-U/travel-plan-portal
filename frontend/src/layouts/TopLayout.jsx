@@ -22,7 +22,7 @@ function NavDot() {
   return <span className="h-1.5 w-1.5 rounded-full bg-current" />;
 }
 
-export default function HomeLayout() {
+export default function TopLayout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
