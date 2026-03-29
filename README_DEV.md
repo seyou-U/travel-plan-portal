@@ -16,6 +16,9 @@
 
 4. 動作確認<br>
 フロント:<br>
+下記コマンドを順に実行したのち
+`cd frontend`<br>
+`npm run dev`<br>
 http://localhost:5173 を開くことができればOK<br><br>
 API:<br>
 Postmanでhttp://localhost:8080/api/health を叩き、レスポンス "ok": trueと表示されればOK
@@ -33,8 +36,13 @@ CIにて設定されているが、ローカル環境動作用に各コマンド
 `docker compose exec php ./vendor/bin/phpstan analyse -c phpstan.neon`
 
 ・React Unitテスト(Vitest)<br>
-`docker compose exec web sh -lc "cd /app && npm run test:run"`
+`cd frontend`<br>
+`npm run test:run`
+
+・Reactのフォーマッタ<br>
+`cd frontend`<br>
+`npm run format`
 
 ・Reactのリンター(ESLint)<br>
-`docker compose exec web sh -lc "cd /app && npm run lint"`
-
+`cd frontend`<br>
+`npm run lint`
