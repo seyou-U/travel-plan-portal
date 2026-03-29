@@ -1,3 +1,4 @@
+import { getErrorMessage } from '../utils/getErrorMessage';
 import { useAuth } from '../contexts/useAuth';
 import { useState } from 'react';
 import { BrandHeader } from '../components/BrandHeader';
@@ -7,22 +8,6 @@ import mountainAndForestScenery from '../images/mountain-and-forest-scenery.png'
 
 const inputClassName =
   'w-full rounded-md border border-slate-200 bg-slate-50 px-10 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100';
-
-function getErrorMessage(error) {
-  const fieldErrors = error?.data?.errors;
-
-  if (fieldErrors && typeof fieldErrors === 'object') {
-    const firstFieldMessage = Object.values(fieldErrors).find(
-      (messages) => Array.isArray(messages) && messages.length > 0,
-    );
-
-    if (Array.isArray(firstFieldMessage) && firstFieldMessage[0]) {
-      return firstFieldMessage[0];
-    }
-  }
-
-  return error?.data?.message ?? '新規登録に失敗しました。入力内容を確認してください。';
-}
 
 export default function RegisterPage() {
   const navigate = useNavigate();
@@ -54,7 +39,7 @@ export default function RegisterPage() {
       await register(formValues);
       navigate('/top', { replace: true });
     } catch (error) {
-      setErrorMessage(getErrorMessage(error));
+      setErrorMessage(getErrorMessage(error, '新規登録に失敗しました。入力内容を確認してください。'));
     } finally {
       setSubmitting(false);
     }
