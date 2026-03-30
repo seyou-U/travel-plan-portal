@@ -1,8 +1,8 @@
 import { createBrowserRouter } from 'react-router-dom';
 import App from '../App';
 import AuthLayout from '../layouts/AuthLayout';
-import TopLayout from '../layouts/TopLayout';
-import TopPageLayout from '../layouts/TopPageLayout';
+import AppLayout from '../layouts/AppLayout';
+import PublicHomeLayout from '../layouts/PublicHomeLayout';
 import HomePage from '../pages/HomePage';
 import LoginPage from '../pages/LoginPage';
 import MyPlanPage from '../pages/MyPlanPage';
@@ -17,7 +17,7 @@ export const router = createBrowserRouter([
     element: <App />,
     children: [
       {
-        element: <TopPageLayout />,
+        element: <PublicHomeLayout />,
         children: [{ index: true, element: <HomePage /> }],
       },
       {
@@ -35,7 +35,7 @@ export const router = createBrowserRouter([
         path: 'top',
         element: (
           <RequireAuth>
-            <TopLayout />
+            <AppLayout />
           </RequireAuth>
         ),
         children: [{ index: true, element: <TopPage /> }],
@@ -44,7 +44,7 @@ export const router = createBrowserRouter([
         path: 'me',
         element: (
           <RequireAuth>
-            <TopLayout />
+            <AppLayout />
           </RequireAuth>
         ),
         children: [{ index: true, element: <MyPlanPage /> }],
@@ -53,7 +53,7 @@ export const router = createBrowserRouter([
         path: 'plan',
         element: (
           <RequireAuth>
-            <TopLayout />
+            <AppLayout />
           </RequireAuth>
         ),
         children: [{ index: true, element: <MyPlanPage /> }],
@@ -62,7 +62,7 @@ export const router = createBrowserRouter([
         path: 'settings',
         element: (
           <RequireAuth>
-            <TopLayout />
+            <AppLayout />
           </RequireAuth>
         ),
         children: [{ index: true, element: <SettingsPage /> }],
