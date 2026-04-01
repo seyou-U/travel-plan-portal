@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('travel_plan_id')->constrained()->cascadeOnDelete();
             $table->unsignedTinyInteger('day_number');
+            $table->string('prefecture_code', 2);
             $table->date('date');
             $table->timestamps();
             $table->softDeletes();

@@ -17,11 +17,10 @@ return new class extends Migration
             $table->foreignId('spot_id')->nullable()->constrained()->cascadeOnDelete();
             $table->string('title');
             $table->string('spot_name');
-            $table->string('prefecture_code', 2);
             $table->time('start_time');
             $table->unsignedSmallInteger('stay_minutes');
             $table->unsignedTinyInteger('transportation_type');
-            $table->unsignedSmallInteger('travel_minutes');
+            $table->unsignedSmallInteger('travel_minutes')->nullable();
             $table->unsignedInteger('transportation_cost')->nullable();
             $table->unsignedInteger('visit_cost')->nullable();
             $table->string('memo')->nullable();
