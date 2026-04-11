@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\PrefectureCode;
 use Carbon\Carbon;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -66,9 +66,11 @@ class TravelPlan extends Controller
                 });
 
             $responseDays = $days->map(function ($day) use ($itemsByDay) {
+                $prefectureCode = (string) $day->prefecture_code;
+
                 return [
                     'day_number' => (int) $day->day_number,
-                    'prefecture_name' => $day->prefecture_name,
+                    'prefecture_name' => PrefectureCode::labelFromCode($prefectureCode) ?? $prefectureCode,
                     'items' => $itemsByDay->get($day->id, collect())->all(),
                 ];
             })->values()->all();
