@@ -29,10 +29,6 @@ class TravelPlanDayFactory extends Factory
 
     /**
      * 指定した旅行開始日と日数を元に旅行計画日の属性を設定する
-     *
-     * @param string $startDate
-     * @param int $dayNumber
-     * @return static
      */
     public function forPlanDate(string $startDate, int $dayNumber): static
     {

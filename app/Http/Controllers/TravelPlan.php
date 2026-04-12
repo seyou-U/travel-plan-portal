@@ -12,7 +12,6 @@ use Illuminate\Support\Str;
 
 class TravelPlan extends Controller
 {
-
     public function index(Request $request)
     {
         if (! Auth::check()) {

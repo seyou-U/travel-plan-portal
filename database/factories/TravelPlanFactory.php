@@ -29,7 +29,7 @@ class TravelPlanFactory extends Factory
             'title' => fake()->randomElement([
                 '大阪旅行',
                 '京都旅行',
-                '福岡旅行'
+                '福岡旅行',
             ]),
             'start_date' => $startDate,
             'days_count' => fake()->numberBetween(1, 3),
