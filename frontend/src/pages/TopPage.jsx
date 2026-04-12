@@ -37,17 +37,6 @@ const TIMELINE = [
   },
 ];
 
-function ActionIcon({ children }) {
-  return (
-    <button
-      type="button"
-      className="grid h-8 w-8 place-items-center rounded-full bg-white text-slate-500 shadow transition hover:text-teal-700"
-    >
-      {children}
-    </button>
-  );
-}
-
 export default function TopPage() {
   return (
     <section className="relative min-h-screen bg-[#f3f6f8] p-4 sm:p-6">
@@ -149,12 +138,6 @@ export default function TopPage() {
             ))}
           </div>
         </div>
-      </div>
-
-      <div className="fixed right-4 top-1/2 hidden -translate-y-1/2 flex-col gap-2 lg:flex">
-        <ActionIcon>◎</ActionIcon>
-        <ActionIcon>↕</ActionIcon>
-        <ActionIcon>☰</ActionIcon>
       </div>
 
       <button
