@@ -28,7 +28,7 @@ class TravelPlanItemFactory extends Factory
                 '大阪城を見にいく',
                 'カフェで休憩',
                 '海遊館に行く',
-                'ホテルにチェックイン'
+                'ホテルにチェックイン',
             ]),
             'spot_name' => fake()->randomElement([
                 '大阪城',

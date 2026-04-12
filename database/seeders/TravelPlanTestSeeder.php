@@ -18,7 +18,7 @@ class TravelPlanTestSeeder extends Seeder
     {
         $user = User::query()->where('email', 'test@example.com')->first();
 
-        if (!$user) {
+        if (! $user) {
             $user = User::factory()->create([
                 'name' => 'テストユーザー',
                 'email' => 'test@example.com',
@@ -31,8 +31,9 @@ class TravelPlanTestSeeder extends Seeder
             ->has(
                 TravelPlanDay::factory(3)
                     ->sequence(fn ($sequence) => ['day_number' => $sequence->index + 1])
-                    ->has(TravelPlanItem::factory(1), 'items')
-            , 'days')
+                    ->has(TravelPlanItem::factory(1), 'items'),
+                'days'
+            )
             ->create();
     }
 }

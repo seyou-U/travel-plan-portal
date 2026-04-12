@@ -15,17 +15,22 @@ class TravelPlan extends Controller
 
     public function index(Request $request)
     {
-        if (!Auth::check()) {
+        if (! Auth::check()) {
             return response()->json(['message' => '認証が必要です'], 401);
         }
 
         try {
-            $user = Auth::user();
+            $userId = Auth::id();
+
+            if ($userId === null) {
+                return response()->json(['message' => '認証が必要です'], 401);
+            }
+
             $currentPage = (int) $request->query('current_page', 1);
             $perPage = 10;
 
             $paginated = DB::table('travel_plans')
-                ->where('user_id', $user->id)
+                ->where('user_id', $userId)
                 ->orderBy('created_at', 'desc')
                 ->paginate($perPage, ['*'], 'current_page', $currentPage);
 
@@ -90,20 +95,24 @@ class TravelPlan extends Controller
 
     public function show($uuid)
     {
-        if (!Auth::check()) {
+        if (! Auth::check()) {
             return response()->json(['message' => '認証が必要です'], 401);
         }
 
-        if (!Str::isUuid($uuid)) {
+        if (! Str::isUuid($uuid)) {
             return response()->json(['message' => 'uuidの形式が不正です'], 400);
         }
 
         try {
-            $user = Auth::user();
+            $userId = Auth::id();
+
+            if ($userId === null) {
+                return response()->json(['message' => '認証が必要です'], 401);
+            }
 
             $plan = DB::table('travel_plans')
                 ->where('uuid', $uuid)
-                ->where('user_id', $user->id)
+                ->where('user_id', $userId)
                 ->first();
 
             if (! $plan) {
