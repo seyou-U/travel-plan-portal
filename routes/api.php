@@ -15,5 +15,6 @@ Route::get('/me', [AuthenticatedUserController::class, 'show']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [LogoutController::class, 'destroy']);
 
+    Route::get('/plans', [TravelPlan::class, 'index']);
     Route::get('/plans/{uuid}', [TravelPlan::class, 'show']);
 });
