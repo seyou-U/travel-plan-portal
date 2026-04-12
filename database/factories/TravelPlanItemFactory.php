@@ -40,6 +40,8 @@ class TravelPlanItemFactory extends Factory
             'stay_minutes' => $stayMinutes,
             'transportation_type' => fake()->randomElement([1, 2, 3, 4]),
             'travel_minutes' => fake()->randomElement([10, 20, 30, 45, 60]),
+            'transportation_cost' => fake()->numberBetween(0, 10000),
+            'visit_cost' => fake()->numberBetween(0, 5000),
         ];
     }
 }

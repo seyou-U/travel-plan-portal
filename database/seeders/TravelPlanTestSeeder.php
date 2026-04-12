@@ -6,7 +6,6 @@ use App\Models\TravelPlan;
 use App\Models\TravelPlanDay;
 use App\Models\TravelPlanItem;
 use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -27,33 +26,13 @@ class TravelPlanTestSeeder extends Seeder
             ]);
         }
 
-        $plan = TravelPlan::factory()->create([
-            'user_id' => $user->id,
-        ]);
-
-        $day1 = TravelPlanDay::factory()
-            ->forPlanDate($plan->start_date, 1)
-            ->create([
-                'travel_plan_id' => $plan->id,
-            ]);
-
-        $day2 = TravelPlanDay::factory()
-            ->forPlanDate($plan->start_date, 2)
-            ->create([
-                'travel_plan_id' => $plan->id,
-            ]);
-
-        TravelPlanItem::factory()->create([
-            'travel_plan_day_id' => $day1->id,
-        ]);
-
-        TravelPlanItem::factory()->create([
-            'travel_plan_day_id' => $day1->id,
-        ]);
-
-        TravelPlanItem::factory()->create([
-            'travel_plan_day_id' => $day2->id,
-        ]);
-
+        TravelPlan::factory(15)
+            ->for($user)
+            ->has(
+                TravelPlanDay::factory(3)
+                    ->sequence(fn ($sequence) => ['day_number' => $sequence->index + 1])
+                    ->has(TravelPlanItem::factory(1), 'items')
+            , 'days')
+            ->create();
     }
 }
