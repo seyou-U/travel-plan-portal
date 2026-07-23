@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Notifications\PasswordResetNotification;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -55,5 +55,13 @@ class User extends Authenticatable
     public function travelPlans(): HasMany
     {
         return $this->hasMany(TravelPlan::class);
+    }
+
+    /**
+     * パスワード再設定メールをカスタム通知で送信する。
+     */
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new PasswordResetNotification($token));
     }
 }
