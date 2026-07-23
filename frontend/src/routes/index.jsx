@@ -3,6 +3,7 @@ import App from '../App';
 import AuthLayout from '../layouts/AuthLayout';
 import AppLayout from '../layouts/AppLayout';
 import PublicHomeLayout from '../layouts/PublicHomeLayout';
+import ForgotPasswordPage from '../pages/ForgotPasswordPage';
 import HomePage from '../pages/HomePage';
 import LoginPage from '../pages/LoginPage';
 import MyPlanPage from '../pages/MyPlanPage';
@@ -29,6 +30,7 @@ export const router = createBrowserRouter([
         children: [
           { path: 'login', element: <LoginPage /> },
           { path: 'register', element: <RegisterPage /> },
+          { path: 'forgot-password', element: <ForgotPasswordPage /> },
         ],
       },
       {

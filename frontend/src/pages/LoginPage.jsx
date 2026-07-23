@@ -143,9 +143,9 @@ export default function LoginPage() {
           </form>
 
           <div className="mt-6 space-y-2 text-center text-xs">
-            <a href="#" className="text-slate-500 hover:text-teal-700">
+            <Link to="/forgot-password" className="text-slate-500 hover:text-teal-700">
               パスワードを忘れた方はこちら
-            </a>
+            </Link>
             <p className="text-slate-500">
               アカウントをお持ちでないですか？{' '}
               <Link to="/register" className="font-bold text-teal-700 hover:text-teal-800">
