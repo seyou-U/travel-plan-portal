@@ -1,16 +1,38 @@
 import { useState } from 'react';
 import { BrandHeader } from '../components/BrandHeader';
 import { EmailIcon } from '../components/icons';
+import { requestPasswordReset } from '../features/auth/auth';
 import { Link } from 'react-router-dom';
+import { getErrorMessage } from '../utils/getErrorMessage';
 
 const inputClassName =
   'w-full rounded-md border border-slate-200 bg-slate-50 px-10 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
+    setSubmitting(true);
+    setErrorMessage('');
+    setSuccessMessage('');
+
+    try {
+      const response = await requestPasswordReset({ email });
+      setSuccessMessage(
+        response?.message ??
+          '入力されたメールアドレスに、パスワード再設定メールを送信しました。',
+      );
+    } catch (error) {
+      setErrorMessage(
+        getErrorMessage(error, 'メールの送信に失敗しました。時間をおいて再度お試しください。'),
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -52,11 +74,24 @@ export default function ForgotPasswordPage() {
               </div>
             </div>
 
+            {successMessage ? (
+              <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">
+                {successMessage}
+              </p>
+            ) : null}
+
+            {errorMessage ? (
+              <p className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-600">
+                {errorMessage}
+              </p>
+            ) : null}
+
             <button
               type="submit"
-              className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-teal-600 px-4 py-2.5 text-sm font-bold text-white shadow-md shadow-teal-700/30 transition hover:bg-teal-700"
+              disabled={submitting}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-teal-600 px-4 py-2.5 text-sm font-bold text-white shadow-md shadow-teal-700/30 transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-70"
             >
-              再設定メールを送信する
+              {submitting ? '送信中...' : '再設定メールを送信する'}
             </button>
           </form>
 

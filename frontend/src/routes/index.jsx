@@ -8,6 +8,7 @@ import HomePage from '../pages/HomePage';
 import LoginPage from '../pages/LoginPage';
 import MyPlanPage from '../pages/MyPlanPage';
 import RegisterPage from '../pages/RegisterPage';
+import ResetPasswordPage from '../pages/ResetPasswordPage';
 import SettingsPage from '../pages/SettingsPage';
 import TopPage from '../pages/TopPage';
 import { RedirectIfAuthed, RequireAuth } from './auth';
@@ -31,6 +32,7 @@ export const router = createBrowserRouter([
           { path: 'login', element: <LoginPage /> },
           { path: 'register', element: <RegisterPage /> },
           { path: 'forgot-password', element: <ForgotPasswordPage /> },
+          { path: 'reset-password', element: <ResetPasswordPage /> },
         ],
       },
       {
