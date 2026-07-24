@@ -37,6 +37,18 @@ export async function requestPasswordReset({ email }) {
   });
 }
 
+export async function resetPassword({ email, token, password, password_confirmation }) {
+  return apiFetch('/api/password/reset', {
+    method: 'POST',
+    body: {
+      email,
+      token,
+      password,
+      password_confirmation,
+    },
+  });
+}
+
 export async function logout() {
   try {
     return await apiFetch('/api/logout', { method: 'POST' });
