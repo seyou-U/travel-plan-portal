@@ -18,7 +18,7 @@ class ForgotPasswordController extends Controller
      *
      * 登録されていないメールアドレスの場合も登録済みの場合と同じ成功レスポンスを返却する
      *
-     * @param ForgotPasswordRequest $request リクエスト
+     * @param  ForgotPasswordRequest  $request  リクエスト
      * @return JsonResponse JSONレスポンス
      */
     public function store(ForgotPasswordRequest $request): JsonResponse

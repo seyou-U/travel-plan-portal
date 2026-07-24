@@ -18,7 +18,7 @@ class ResetPasswordController extends Controller
     /**
      * トークンを検証し、新しいパスワードへ更新する。
      *
-     * @param ResetPasswordRequest $request パスワード再設定情報を含むリクエスト
+     * @param  ResetPasswordRequest  $request  パスワード再設定情報を含むリクエスト
      * @return JsonResponse パスワード再設定結果のJSONレスポンス
      */
     public function store(ResetPasswordRequest $request): JsonResponse

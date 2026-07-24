@@ -11,11 +11,9 @@ use Illuminate\Notifications\Notification;
 class PasswordResetNotification extends Notification
 {
     /**
-     * @param string $token パスワード再設定トークン
+     * @param  string  $token  パスワード再設定トークン
      */
-    public function __construct(private readonly string $token)
-    {
-    }
+    public function __construct(private readonly string $token) {}
 
     /**
      * 通知で使用するチャンネルを返す。
@@ -36,7 +34,7 @@ class PasswordResetNotification extends Notification
             'token' => $this->token,
             'email' => $notifiable->getEmailForPasswordReset(),
         ]);
-        $resetUrl = rtrim((string) config('app.frontend_url'), '/') . "/reset-password?{$query}";
+        $resetUrl = rtrim((string) config('app.frontend_url'), '/')."/reset-password?{$query}";
 
         return (new MailMessage)
             ->subject('パスワード再設定のご案内')
