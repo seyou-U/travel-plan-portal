@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import top from '../../assets/top.png';
 
 export function UpperSection() {
@@ -17,12 +18,12 @@ export function UpperSection() {
             あなたの好みやスタイルに合わせたパーソナライズ体験を提供します。
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <button
-              className="rounded-xl bg-teal-600 px-6 py-3 text-sm font-bold text-white shadow-xl shadow-teal-700/20 transition hover:bg-teal-700"
-              type="button"
+            <Link
+              className="inline-flex items-center justify-center rounded-xl bg-teal-600 px-6 py-3 text-sm font-bold text-white shadow-xl shadow-teal-700/20 transition hover:bg-teal-700"
+              to="/register"
             >
               無料で始める
-            </button>
+            </Link>
           </div>
         </div>
         <div className="overflow-hidden rounded-3xl shadow-2xl shadow-slate-900/15">

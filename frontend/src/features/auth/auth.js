@@ -30,6 +30,25 @@ export async function login({ email, password }) {
   }
 }
 
+export async function requestPasswordReset({ email }) {
+  return apiFetch('/api/password/forgot', {
+    method: 'POST',
+    body: { email },
+  });
+}
+
+export async function resetPassword({ email, token, password, password_confirmation }) {
+  return apiFetch('/api/password/reset', {
+    method: 'POST',
+    body: {
+      email,
+      token,
+      password,
+      password_confirmation,
+    },
+  });
+}
+
 export async function logout() {
   try {
     return await apiFetch('/api/logout', { method: 'POST' });

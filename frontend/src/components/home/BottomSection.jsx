@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom';
+
 export function BottomSection() {
   return (
     <section className="border-y border-slate-200 bg-slate-100">
@@ -6,12 +8,12 @@ export function BottomSection() {
         <p className="mx-auto mt-4 max-w-3xl text-base text-slate-600 sm:text-lg">
           今すぐ登録して、あなただけの特別なトラベルプランを作成しましょう。
         </p>
-        <button
-          className="mt-8 rounded-full bg-teal-600 px-10 py-3 text-base font-bold text-white shadow-xl shadow-teal-700/20 transition hover:bg-teal-700"
-          type="button"
+        <Link
+          className="mt-8 inline-flex items-center justify-center rounded-full bg-teal-600 px-10 py-3 text-base font-bold text-white shadow-xl shadow-teal-700/20 transition hover:bg-teal-700"
+          to="/register"
         >
           無料で始める
-        </button>
+        </Link>
       </div>
     </section>
   );
