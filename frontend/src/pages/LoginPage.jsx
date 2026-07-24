@@ -18,6 +18,7 @@ export default function LoginPage() {
   const [logoutMessage] = useState(
     () => location.state?.logoutMessage ?? sessionStorage.getItem('logoutMessage') ?? '',
   );
+  const [resetMessage] = useState(() => location.state?.resetMessage ?? '');
   const [formValues, setFormValues] = useState({
     email: '',
     password: '',
@@ -59,6 +60,14 @@ export default function LoginPage() {
         <div className="mx-auto w-full py-4 max-w-2xl">
           <p className="rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
             {logoutMessage}
+          </p>
+        </div>
+      ) : null}
+
+      {resetMessage ? (
+        <div className="mx-auto w-full py-4 max-w-2xl">
+          <p className="rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
+            {resetMessage}
           </p>
         </div>
       ) : null}
