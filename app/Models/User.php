@@ -57,6 +57,11 @@ class User extends Authenticatable
         return $this->hasMany(TravelPlan::class);
     }
 
+    public function aiPlanRequests(): HasMany
+    {
+        return $this->hasMany(AiPlanRequest::class);
+    }
+
     /**
      * パスワード再設定メールをカスタム通知で送信する。
      */
