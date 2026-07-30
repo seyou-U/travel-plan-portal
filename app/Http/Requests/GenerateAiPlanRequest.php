@@ -3,7 +3,9 @@
 namespace App\Http\Requests;
 
 use Illuminate\Contracts\Validation\ValidationRule;
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Http\Exceptions\HttpResponseException;
 
 class GenerateAiPlanRequest extends FormRequest
 {
@@ -81,5 +83,16 @@ class GenerateAiPlanRequest extends FormRequest
             'preferences.*' => '希望条件',
             'notes' => '備考',
         ];
+    }
+
+    /**
+     * APIとしてバリデーションエラーをJSONで返却する。
+     */
+    protected function failedValidation(Validator $validator): void
+    {
+        throw new HttpResponseException(response()->json([
+            'message' => '入力内容に誤りがあります。',
+            'errors' => $validator->errors(),
+        ], 422));
     }
 }
