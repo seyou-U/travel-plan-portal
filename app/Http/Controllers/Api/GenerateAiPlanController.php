@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Enums\AiPlanRequestStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\GenerateAiPlanRequest;
+use App\Jobs\GenerateAiTravelPlanJob;
 use App\Models\User;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Http\JsonResponse;
@@ -20,7 +21,7 @@ class GenerateAiPlanController extends Controller
     {
         $user = $request->user();
 
-        if (!$user instanceof User) {
+        if (! $user instanceof User) {
             throw new AuthenticationException;
         }
 
@@ -29,6 +30,8 @@ class GenerateAiPlanController extends Controller
             'request_payload' => $request->validated(),
             'provider' => 'gemini',
         ]);
+
+        GenerateAiTravelPlanJob::dispatch((int) $aiPlanRequest->getKey())->afterCommit();
 
         return response()->json([
             'data' => [
