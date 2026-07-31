@@ -3,9 +3,11 @@
 namespace Tests\Feature\Api;
 
 use App\Enums\AiPlanRequestStatus;
+use App\Jobs\GenerateAiTravelPlanJob;
 use App\Models\AiPlanRequest;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -18,6 +20,8 @@ class GenerateAiPlanRequestApiTest extends TestCase
 
     public function test_authenticated_user_can_create_queued_ai_plan_request(): void
     {
+        Queue::fake();
+
         $user = $this->createUser();
         $payload = $this->validPayload();
         Sanctum::actingAs($user);
@@ -60,6 +64,11 @@ class GenerateAiPlanRequestApiTest extends TestCase
         $this->assertNull($aiPlanRequest->error_message);
         $this->assertDatabaseCount('ai_plan_requests', 1);
         $this->assertDatabaseCount('ai_plan_results', 0);
+        Queue::assertPushed(
+            GenerateAiTravelPlanJob::class,
+            fn (GenerateAiTravelPlanJob $job): bool => $job->aiPlanRequestId === $aiPlanRequest->id,
+        );
+        Queue::assertPushedTimes(GenerateAiTravelPlanJob::class, 1);
     }
 
     public function test_unauthenticated_user_cannot_create_ai_plan_request(): void
