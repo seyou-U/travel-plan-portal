@@ -84,7 +84,7 @@ class GenerateAiTravelPlanJob implements ShouldQueue
     {
         $message = $exception?->getMessage();
 
-        if (!is_string($message) || trim($message) === '') {
+        if (! is_string($message) || trim($message) === '') {
             $message = 'AI旅程生成処理に失敗しました。';
         }
 
