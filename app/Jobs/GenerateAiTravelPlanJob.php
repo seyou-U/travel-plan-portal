@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Contracts\Ai\TravelPlanGenerator;
 use App\Enums\AiPlanRequestStatus;
+use App\Exceptions\GeminiGenerationException;
 use App\Models\AiPlanRequest;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -22,7 +23,7 @@ class GenerateAiTravelPlanJob implements ShouldQueue
     public int $tries = 3;
 
     /**
-     * 最大試行回数。
+     * 最大実行時間（秒）。
      */
     public int $timeout = 60;
 
@@ -58,7 +59,16 @@ class GenerateAiTravelPlanJob implements ShouldQueue
             throw new UnexpectedValueException('AI旅程生成条件の形式が不正です。');
         }
 
-        $resultPayload = $generator->generate($requestPayload);
+        try {
+            $resultPayload = $generator->generate($requestPayload);
+        } catch (GeminiGenerationException $exception) {
+            if (! $exception->retryable) {
+                $this->fail($exception);
+
+                return;
+            }
+            throw $exception;
+        }
 
         DB::transaction(function () use ($resultPayload): void {
             $aiPlanRequest = AiPlanRequest::query()
@@ -88,13 +98,17 @@ class GenerateAiTravelPlanJob implements ShouldQueue
             $message = 'AI旅程生成処理に失敗しました。';
         }
 
+        $errorCode = $exception instanceof GeminiGenerationException
+            ? $exception->errorCode->value
+            : 'AI_PLAN_GENERATION_FAILED';
+
         AiPlanRequest::query()
             ->whereKey($this->aiPlanRequestId)
             ->where('status', '!=', AiPlanRequestStatus::Completed->value)
             ->update([
                 'status' => AiPlanRequestStatus::Failed,
                 'failed_at' => now(),
-                'error_code' => 'AI_PLAN_GENERATION_FAILED',
+                'error_code' => $errorCode,
                 'error_message' => Str::limit($message, 1000, ''),
             ]);
     }

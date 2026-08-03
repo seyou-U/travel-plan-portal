@@ -4,11 +4,14 @@ namespace Tests\Feature\Jobs;
 
 use App\Contracts\Ai\TravelPlanGenerator;
 use App\Enums\AiPlanRequestStatus;
+use App\Enums\GeminiErrorCode;
+use App\Exceptions\GeminiGenerationException;
 use App\Jobs\GenerateAiTravelPlanJob;
 use App\Models\AiPlanRequest;
 use App\Models\AiPlanResult;
 use App\Models\User;
 use App\Services\Ai\FakeTravelPlanGenerator;
+use App\Services\Ai\GeminiTravelPlanGenerator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use RuntimeException;
@@ -18,10 +21,10 @@ class GenerateAiTravelPlanJobTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_generator_contract_resolves_to_fake_implementation(): void
+    public function test_generator_contract_resolves_to_gemini_implementation(): void
     {
         $this->assertInstanceOf(
-            FakeTravelPlanGenerator::class,
+            GeminiTravelPlanGenerator::class,
             app(TravelPlanGenerator::class),
         );
     }
@@ -107,6 +110,78 @@ class GenerateAiTravelPlanJobTest extends TestCase
         $this->assertNotNull($aiPlanRequest->failed_at);
         $this->assertSame('AI_PLAN_GENERATION_FAILED', $aiPlanRequest->error_code);
         $this->assertSame('Fake generator failed.', $aiPlanRequest->error_message);
+        $this->assertDatabaseCount('ai_plan_results', 0);
+    }
+
+    public function test_non_retryable_gemini_error_fails_job_immediately(): void
+    {
+        $aiPlanRequest = $this->createAiPlanRequest();
+        $exception = new GeminiGenerationException(
+            GeminiErrorCode::Unauthorized,
+            false,
+            'Gemini APIの認証に失敗しました。',
+        );
+        $generator = new class($exception) implements TravelPlanGenerator
+        {
+            public function __construct(private GeminiGenerationException $exception) {}
+
+            public function generate(array $requestPayload): array
+            {
+                throw $this->exception;
+            }
+        };
+        $job = (new GenerateAiTravelPlanJob($aiPlanRequest->id))
+            ->withFakeQueueInteractions();
+
+        $job->handle($generator);
+
+        $job
+            ->assertFailedWith($exception)
+            ->assertNotReleased();
+
+        $job->failed($exception);
+        $aiPlanRequest->refresh();
+
+        $this->assertSame(AiPlanRequestStatus::Failed, $aiPlanRequest->status);
+        $this->assertSame(GeminiErrorCode::Unauthorized->value, $aiPlanRequest->error_code);
+        $this->assertDatabaseCount('ai_plan_results', 0);
+    }
+
+    public function test_retryable_gemini_error_is_rethrown_for_queue_retry(): void
+    {
+        $aiPlanRequest = $this->createAiPlanRequest();
+        $exception = new GeminiGenerationException(
+            GeminiErrorCode::RateLimited,
+            true,
+            'Gemini APIの利用上限に達しました。',
+        );
+        $generator = new class($exception) implements TravelPlanGenerator
+        {
+            public function __construct(private GeminiGenerationException $exception) {}
+
+            public function generate(array $requestPayload): array
+            {
+                throw $this->exception;
+            }
+        };
+        $job = (new GenerateAiTravelPlanJob($aiPlanRequest->id))
+            ->withFakeQueueInteractions();
+        $caught = null;
+
+        try {
+            $job->handle($generator);
+        } catch (GeminiGenerationException $thrown) {
+            $caught = $thrown;
+        }
+
+        $this->assertSame($exception, $caught);
+        $job
+            ->assertNotFailed()
+            ->assertNotReleased();
+        $this->assertSame(
+            AiPlanRequestStatus::Processing,
+            $aiPlanRequest->refresh()->status,
+        );
         $this->assertDatabaseCount('ai_plan_results', 0);
     }
 
