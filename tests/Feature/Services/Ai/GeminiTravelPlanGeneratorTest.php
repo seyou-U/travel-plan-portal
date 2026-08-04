@@ -4,6 +4,8 @@ namespace Tests\Feature\Services\Ai;
 
 use App\Enums\GeminiErrorCode;
 use App\Exceptions\GeminiGenerationException;
+use App\Exceptions\GeminiInvalidJsonException;
+use App\Exceptions\GeminiOutputValidationException;
 use App\Services\Ai\GeminiTravelPlanGenerator;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Request;
@@ -55,7 +57,7 @@ class GeminiTravelPlanGeneratorTest extends TestCase
             ]),
         ]);
 
-        $result = (new GeminiTravelPlanGenerator)->generate($this->requestPayload());
+        $result = $this->generator()->generate($this->requestPayload());
 
         $this->assertSame($expectedResult, $result);
         Http::assertSentCount(1);
@@ -90,7 +92,7 @@ class GeminiTravelPlanGeneratorTest extends TestCase
         $this->assertGeminiFailure(
             GeminiErrorCode::ApiKeyMissing,
             false,
-            fn (): array => (new GeminiTravelPlanGenerator)->generate($this->requestPayload()),
+            fn (): array => $this->generator()->generate($this->requestPayload()),
         );
         Http::assertNothingSent();
     }
@@ -110,7 +112,7 @@ class GeminiTravelPlanGeneratorTest extends TestCase
             )),
         ]);
 
-        $result = (new GeminiTravelPlanGenerator)->generate($requestPayload);
+        $result = $this->generator()->generate($requestPayload);
 
         $this->assertSame('京都2泊3日の旅', $result['title']);
     }
@@ -130,7 +132,7 @@ class GeminiTravelPlanGeneratorTest extends TestCase
         $this->assertGeminiFailure(
             $errorCode,
             false,
-            fn (): array => (new GeminiTravelPlanGenerator)->generate($this->requestPayload()),
+            fn (): array => $this->generator()->generate($this->requestPayload()),
         );
     }
 
@@ -155,7 +157,7 @@ class GeminiTravelPlanGeneratorTest extends TestCase
         $this->assertGeminiFailure(
             GeminiErrorCode::RateLimited,
             true,
-            fn (): array => (new GeminiTravelPlanGenerator)->generate($this->requestPayload()),
+            fn (): array => $this->generator()->generate($this->requestPayload()),
         );
     }
 
@@ -168,7 +170,7 @@ class GeminiTravelPlanGeneratorTest extends TestCase
         $this->assertGeminiFailure(
             GeminiErrorCode::ServerError,
             true,
-            fn (): array => (new GeminiTravelPlanGenerator)->generate($this->requestPayload()),
+            fn (): array => $this->generator()->generate($this->requestPayload()),
         );
     }
 
@@ -181,7 +183,7 @@ class GeminiTravelPlanGeneratorTest extends TestCase
         $this->assertGeminiFailure(
             GeminiErrorCode::ConnectionTimeout,
             true,
-            fn (): array => (new GeminiTravelPlanGenerator)->generate($this->requestPayload()),
+            fn (): array => $this->generator()->generate($this->requestPayload()),
         );
     }
 
@@ -198,7 +200,7 @@ class GeminiTravelPlanGeneratorTest extends TestCase
         $this->assertGeminiFailure(
             GeminiErrorCode::ModelOutputMissing,
             false,
-            fn (): array => (new GeminiTravelPlanGenerator)->generate($this->requestPayload()),
+            fn (): array => $this->generator()->generate($this->requestPayload()),
         );
     }
 
@@ -211,7 +213,7 @@ class GeminiTravelPlanGeneratorTest extends TestCase
         $this->assertGeminiFailure(
             GeminiErrorCode::ModelOutputEmpty,
             false,
-            fn (): array => (new GeminiTravelPlanGenerator)->generate($this->requestPayload()),
+            fn (): array => $this->generator()->generate($this->requestPayload()),
         );
     }
 
@@ -224,7 +226,8 @@ class GeminiTravelPlanGeneratorTest extends TestCase
         $this->assertGeminiFailure(
             GeminiErrorCode::InvalidJson,
             false,
-            fn (): array => (new GeminiTravelPlanGenerator)->generate($this->requestPayload()),
+            fn (): array => $this->generator()->generate($this->requestPayload()),
+            GeminiInvalidJsonException::class,
         );
     }
 
@@ -242,7 +245,8 @@ class GeminiTravelPlanGeneratorTest extends TestCase
         $this->assertGeminiFailure(
             GeminiErrorCode::OutputValidationFailed,
             false,
-            fn (): array => (new GeminiTravelPlanGenerator)->generate($this->requestPayload()),
+            fn (): array => $this->generator()->generate($this->requestPayload()),
+            GeminiOutputValidationException::class,
         );
     }
 
@@ -260,7 +264,8 @@ class GeminiTravelPlanGeneratorTest extends TestCase
         $this->assertGeminiFailure(
             GeminiErrorCode::OutputValidationFailed,
             false,
-            fn (): array => (new GeminiTravelPlanGenerator)->generate($this->requestPayload()),
+            fn (): array => $this->generator()->generate($this->requestPayload()),
+            GeminiOutputValidationException::class,
         );
     }
 
@@ -271,6 +276,7 @@ class GeminiTravelPlanGeneratorTest extends TestCase
         GeminiErrorCode $errorCode,
         bool $retryable,
         callable $callback,
+        string $exceptionClass = GeminiGenerationException::class,
     ): void {
         $exception = null;
 
@@ -280,9 +286,14 @@ class GeminiTravelPlanGeneratorTest extends TestCase
             $exception = $caught;
         }
 
-        $this->assertInstanceOf(GeminiGenerationException::class, $exception);
+        $this->assertInstanceOf($exceptionClass, $exception);
         $this->assertSame($errorCode, $exception->errorCode);
         $this->assertSame($retryable, $exception->retryable);
+    }
+
+    private function generator(): GeminiTravelPlanGenerator
+    {
+        return app(GeminiTravelPlanGenerator::class);
     }
 
     /**

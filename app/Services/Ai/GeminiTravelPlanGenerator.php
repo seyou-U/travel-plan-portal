@@ -5,25 +5,22 @@ namespace App\Services\Ai;
 use App\Contracts\Ai\TravelPlanGenerator;
 use App\Enums\GeminiErrorCode;
 use App\Exceptions\GeminiGenerationException;
+use App\Exceptions\GeminiInvalidJsonException;
+use App\Exceptions\GeminiOutputValidationException;
+use App\Services\Ai\Schemas\AiTravelPlanResultSchema;
+use App\Services\Ai\Validators\AiTravelPlanResultValidator;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Validator;
 use JsonException;
 
 class GeminiTravelPlanGenerator implements TravelPlanGenerator
 {
-    /**
-     * @var list<string>
-     */
-    private const ITEM_TYPES = [
-        'spot',
-        'meal',
-        'hotel',
-        'transport',
-        'memo',
-    ];
+    public function __construct(
+        private readonly AiTravelPlanResultSchema $resultSchema,
+        private readonly AiTravelPlanResultValidator $resultValidator,
+    ) {}
 
     /**
      * Gemini Interactions APIを使用して旅程結果を生成する。
@@ -56,7 +53,9 @@ class GeminiTravelPlanGenerator implements TravelPlanGenerator
                     'response_format' => [
                         'type' => 'text',
                         'mime_type' => 'application/json',
-                        'schema' => $this->responseSchema($requestPayload),
+                        'schema' => $this->resultSchema->toArray(
+                            $this->expectedDaysCount($requestPayload),
+                        ),
                     ],
                 ]);
         } catch (ConnectionException $exception) {
@@ -69,25 +68,16 @@ class GeminiTravelPlanGenerator implements TravelPlanGenerator
         try {
             $result = json_decode($text, true, 512, JSON_THROW_ON_ERROR);
         } catch (JsonException $exception) {
-            throw new GeminiGenerationException(
-                GeminiErrorCode::InvalidJson,
-                false,
-                'Geminiの生成結果をJSONとして解析できませんでした。',
-                $exception,
-            );
+            throw new GeminiInvalidJsonException($exception);
         }
 
         if (! is_array($result)) {
-            throw new GeminiGenerationException(
-                GeminiErrorCode::OutputValidationFailed,
-                false,
-                'Geminiの生成結果がオブジェクト形式ではありません。',
-            );
+            throw new GeminiOutputValidationException([
+                'result' => ['Geminiの生成結果がオブジェクト形式ではありません。'],
+            ]);
         }
 
-        $this->validateResult($result, $requestPayload);
-
-        return $result;
+        return $this->resultValidator->validate($result, $requestPayload);
     }
 
     private function requiredStringConfig(
@@ -173,85 +163,6 @@ class GeminiTravelPlanGenerator implements TravelPlanGenerator
 - start_dateとend_dateは旅行条件と完全に一致させる
 - 指定されたJSON Schemaに厳密に従い、JSONだけを出力する
 PROMPT;
-    }
-
-    /**
-     * @param  array<string, mixed>  $requestPayload
-     * @return array<string, mixed>
-     */
-    private function responseSchema(array $requestPayload): array
-    {
-        $daysCount = $this->expectedDaysCount($requestPayload);
-
-        return [
-            'type' => 'object',
-            'additionalProperties' => false,
-            'properties' => [
-                'title' => ['type' => 'string'],
-                'summary' => ['type' => 'string'],
-                'destination' => ['type' => 'string'],
-                'start_date' => ['type' => 'string', 'format' => 'date'],
-                'end_date' => ['type' => 'string', 'format' => 'date'],
-                'estimated_budget' => ['type' => 'integer', 'minimum' => 0],
-                'days' => [
-                    'type' => 'array',
-                    'minItems' => $daysCount,
-                    'maxItems' => $daysCount,
-                    'items' => [
-                        'type' => 'object',
-                        'additionalProperties' => false,
-                        'properties' => [
-                            'day_number' => ['type' => 'integer', 'minimum' => 1],
-                            'date' => ['type' => 'string', 'format' => 'date'],
-                            'title' => ['type' => 'string'],
-                            'items' => [
-                                'type' => 'array',
-                                'items' => [
-                                    'type' => 'object',
-                                    'additionalProperties' => false,
-                                    'properties' => [
-                                        'sort_order' => ['type' => 'integer', 'minimum' => 1],
-                                        'item_type' => [
-                                            'type' => 'string',
-                                            'enum' => self::ITEM_TYPES,
-                                        ],
-                                        'title' => ['type' => 'string'],
-                                        'description' => ['type' => 'string'],
-                                        'start_time' => ['type' => ['string', 'null']],
-                                        'end_time' => ['type' => ['string', 'null']],
-                                        'estimated_cost' => ['type' => 'integer', 'minimum' => 0],
-                                    ],
-                                    'required' => [
-                                        'sort_order',
-                                        'item_type',
-                                        'title',
-                                        'description',
-                                        'start_time',
-                                        'end_time',
-                                        'estimated_cost',
-                                    ],
-                                ],
-                            ],
-                        ],
-                        'required' => [
-                            'day_number',
-                            'date',
-                            'title',
-                            'items',
-                        ],
-                    ],
-                ],
-            ],
-            'required' => [
-                'title',
-                'summary',
-                'destination',
-                'start_date',
-                'end_date',
-                'estimated_budget',
-                'days',
-            ],
-        ];
     }
 
     private function ensureSuccessfulResponse(Response $response): void
@@ -393,79 +304,6 @@ PROMPT;
     }
 
     /**
-     * @param  array<string, mixed>  $result
-     * @param  array<string, mixed>  $requestPayload
-     */
-    private function validateResult(array $result, array $requestPayload): void
-    {
-        $validator = Validator::make($result, [
-            'title' => ['required', 'string'],
-            'summary' => ['required', 'string'],
-            'destination' => ['required', 'string'],
-            'start_date' => ['required', 'date_format:Y-m-d'],
-            'end_date' => ['required', 'date_format:Y-m-d'],
-            'estimated_budget' => ['required', 'integer', 'min:0'],
-            'days' => ['required', 'array', 'min:1'],
-            'days.*.day_number' => ['required', 'integer', 'min:1'],
-            'days.*.date' => ['required', 'date_format:Y-m-d'],
-            'days.*.title' => ['required', 'string'],
-            'days.*.items' => ['required', 'array'],
-            'days.*.items.*.sort_order' => ['required', 'integer', 'min:1'],
-            'days.*.items.*.item_type' => [
-                'required',
-                'string',
-                'in:'.implode(',', self::ITEM_TYPES),
-            ],
-            'days.*.items.*.title' => ['required', 'string'],
-            'days.*.items.*.description' => ['required', 'string'],
-            'days.*.items.*.start_time' => ['present', 'nullable', 'string'],
-            'days.*.items.*.end_time' => ['present', 'nullable', 'string'],
-            'days.*.items.*.estimated_cost' => ['required', 'integer', 'min:0'],
-        ]);
-
-        if ($validator->fails()) {
-            $this->throwOutputValidationException();
-        }
-
-        $expectedStartDate = $requestPayload['start_date'] ?? null;
-        $expectedEndDate = $requestPayload['end_date'] ?? null;
-
-        if (
-            ! is_string($expectedStartDate)
-            || ! is_string($expectedEndDate)
-            || ($result['start_date'] ?? null) !== $expectedStartDate
-            || ($result['end_date'] ?? null) !== $expectedEndDate
-            || count($result['days']) !== $this->expectedDaysCount($requestPayload)
-        ) {
-            $this->throwOutputValidationException();
-        }
-
-        $expectedDate = CarbonImmutable::createFromFormat('!Y-m-d', $expectedStartDate);
-
-        foreach ($result['days'] as $dayIndex => $day) {
-            if (
-                ! is_array($day)
-                || ($day['day_number'] ?? null) !== $dayIndex + 1
-                || ($day['date'] ?? null) !== $expectedDate->addDays($dayIndex)->toDateString()
-            ) {
-                $this->throwOutputValidationException();
-            }
-
-            $items = $day['items'] ?? null;
-
-            if (! is_array($items)) {
-                $this->throwOutputValidationException();
-            }
-
-            foreach ($items as $itemIndex => $item) {
-                if (! is_array($item) || ($item['sort_order'] ?? null) !== $itemIndex + 1) {
-                    $this->throwOutputValidationException();
-                }
-            }
-        }
-    }
-
-    /**
      * @param  array<string, mixed>  $requestPayload
      */
     private function expectedDaysCount(array $requestPayload): int
@@ -502,17 +340,5 @@ PROMPT;
         }
 
         return (int) $start->diffInDays($end) + 1;
-    }
-
-    /**
-     * @return never
-     */
-    private function throwOutputValidationException(): void
-    {
-        throw new GeminiGenerationException(
-            GeminiErrorCode::OutputValidationFailed,
-            false,
-            'Geminiの生成結果がアプリケーションの検証条件を満たしていません。',
-        );
     }
 }

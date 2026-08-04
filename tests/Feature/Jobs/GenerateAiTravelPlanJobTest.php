@@ -6,6 +6,8 @@ use App\Contracts\Ai\TravelPlanGenerator;
 use App\Enums\AiPlanRequestStatus;
 use App\Enums\GeminiErrorCode;
 use App\Exceptions\GeminiGenerationException;
+use App\Exceptions\GeminiInvalidJsonException;
+use App\Exceptions\GeminiOutputValidationException;
 use App\Jobs\GenerateAiTravelPlanJob;
 use App\Models\AiPlanRequest;
 use App\Models\AiPlanResult;
@@ -14,6 +16,7 @@ use App\Services\Ai\FakeTravelPlanGenerator;
 use App\Services\Ai\GeminiTravelPlanGenerator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
+use PHPUnit\Framework\Attributes\DataProvider;
 use RuntimeException;
 use Tests\TestCase;
 
@@ -145,6 +148,61 @@ class GenerateAiTravelPlanJobTest extends TestCase
         $this->assertSame(AiPlanRequestStatus::Failed, $aiPlanRequest->status);
         $this->assertSame(GeminiErrorCode::Unauthorized->value, $aiPlanRequest->error_code);
         $this->assertDatabaseCount('ai_plan_results', 0);
+    }
+
+    #[DataProvider('invalidGeneratedOutputProvider')]
+    public function test_invalid_generated_output_is_not_retried_or_persisted(
+        GeminiGenerationException $exception,
+        GeminiErrorCode $expectedErrorCode,
+    ): void {
+        $aiPlanRequest = $this->createAiPlanRequest();
+        $generator = new class($exception) implements TravelPlanGenerator
+        {
+            public function __construct(private GeminiGenerationException $exception) {}
+
+            public function generate(array $requestPayload): array
+            {
+                throw $this->exception;
+            }
+        };
+        $job = (new GenerateAiTravelPlanJob($aiPlanRequest->id))
+            ->withFakeQueueInteractions();
+
+        $job->handle($generator);
+
+        $job
+            ->assertFailedWith($exception)
+            ->assertNotReleased();
+
+        $job->failed($exception);
+        $aiPlanRequest->refresh();
+
+        $this->assertSame(AiPlanRequestStatus::Failed, $aiPlanRequest->status);
+        $this->assertSame(
+            $expectedErrorCode->value,
+            $aiPlanRequest->error_code,
+        );
+        $this->assertNotNull($aiPlanRequest->failed_at);
+        $this->assertDatabaseCount('ai_plan_results', 0);
+    }
+
+    /**
+     * @return array<string, array{GeminiGenerationException, GeminiErrorCode}>
+     */
+    public static function invalidGeneratedOutputProvider(): array
+    {
+        return [
+            'invalid JSON' => [
+                new GeminiInvalidJsonException,
+                GeminiErrorCode::InvalidJson,
+            ],
+            'output validation failure' => [
+                new GeminiOutputValidationException([
+                    'result.title' => ['タイトルは必須です。'],
+                ]),
+                GeminiErrorCode::OutputValidationFailed,
+            ],
+        ];
     }
 
     public function test_retryable_gemini_error_is_rethrown_for_queue_retry(): void
