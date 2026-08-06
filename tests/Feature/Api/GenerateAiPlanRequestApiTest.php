@@ -36,6 +36,8 @@ class GenerateAiPlanRequestApiTest extends TestCase
             'failed_at' => '2026-08-01 10:02:00',
             'error_code' => 'CLIENT_ERROR',
             'error_message' => 'クライアント指定エラー',
+            'destination' => '京都',
+            'transportation' => 'train',
         ]);
 
         $aiPlanRequest = AiPlanRequest::query()->sole();
@@ -56,6 +58,8 @@ class GenerateAiPlanRequestApiTest extends TestCase
         $this->assertSame($user->id, $aiPlanRequest->user_id);
         $this->assertSame(AiPlanRequestStatus::Queued, $aiPlanRequest->status);
         $this->assertEquals($payload, $aiPlanRequest->request_payload);
+        $this->assertArrayNotHasKey('destination', $aiPlanRequest->request_payload);
+        $this->assertArrayNotHasKey('transportation', $aiPlanRequest->request_payload);
         $this->assertSame('gemini', $aiPlanRequest->provider);
         $this->assertNull($aiPlanRequest->started_at);
         $this->assertNull($aiPlanRequest->completed_at);
@@ -83,12 +87,22 @@ class GenerateAiPlanRequestApiTest extends TestCase
     public function test_missing_required_fields_returns_unprocessable_entity(): void
     {
         $this->assertInvalid([], [
-            'destination',
+            'prefecture',
             'start_date',
             'end_date',
             'departure_location',
             'number_of_people',
+            'budget',
+            'transport_priority',
         ]);
+    }
+
+    public function test_prefecture_outside_enum_values_returns_unprocessable_entity(): void
+    {
+        $this->assertInvalid([
+            ...$this->validPayload(),
+            'prefecture' => '京都府',
+        ], ['prefecture']);
     }
 
     public function test_past_start_date_returns_unprocessable_entity(): void
@@ -124,12 +138,39 @@ class GenerateAiPlanRequestApiTest extends TestCase
         ], ['budget']);
     }
 
-    public function test_invalid_transportation_returns_unprocessable_entity(): void
+    public function test_non_string_transport_priority_returns_unprocessable_entity(): void
     {
         $this->assertInvalid([
             ...$this->validPayload(),
-            'transportation' => 'ship',
-        ], ['transportation']);
+            'transport_priority' => ['おまかせ'],
+        ], ['transport_priority']);
+    }
+
+    public function test_transport_priority_outside_allowed_values_returns_unprocessable_entity(): void
+    {
+        $this->assertInvalid([
+            ...$this->validPayload(),
+            'transport_priority' => 'auto',
+        ], ['transport_priority']);
+    }
+
+    public function test_missing_transport_priority_returns_unprocessable_entity(): void
+    {
+        $payload = $this->validPayload();
+        unset($payload['transport_priority']);
+
+        $this->assertInvalid($payload, ['transport_priority']);
+    }
+
+    public function test_travel_period_over_31_days_returns_unprocessable_entity(): void
+    {
+        $startDate = now()->addDay();
+
+        $this->assertInvalid([
+            ...$this->validPayload(),
+            'start_date' => $startDate->format('Y-m-d'),
+            'end_date' => $startDate->copy()->addDays(31)->format('Y-m-d'),
+        ], ['end_date']);
     }
 
     public function test_non_array_preferences_returns_unprocessable_entity(): void
@@ -173,13 +214,13 @@ class GenerateAiPlanRequestApiTest extends TestCase
     private function validPayload(): array
     {
         return [
-            'destination' => '京都',
+            'prefecture' => '26',
             'start_date' => now()->addDay()->format('Y-m-d'),
             'end_date' => now()->addDays(3)->format('Y-m-d'),
             'departure_location' => '東京',
             'number_of_people' => 2,
             'budget' => 100000,
-            'transportation' => 'train',
+            'transport_priority' => 'おまかせ',
             'preferences' => [
                 '寺社を巡りたい',
                 '京都らしい料理を食べたい',
