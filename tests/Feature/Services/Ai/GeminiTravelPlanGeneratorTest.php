@@ -73,7 +73,10 @@ class GeminiTravelPlanGeneratorTest extends TestCase
                 && ($data['model'] ?? null) === 'gemini-3.6-flash'
                 && ($data['store'] ?? null) === false
                 && is_string($data['input'] ?? null)
-                && str_contains($data['input'], '旅行全体の総予算')
+                && str_contains($data['input'], '"prefecture": "京都府"')
+                && str_contains($data['input'], '1人当たりの予算')
+                && str_contains($data['input'], '"transport_priority": "おまかせ"')
+                && str_contains($data['input'], '時間・費用・移動負担を総合的に考慮する。')
                 && is_array($responseFormat)
                 && ($responseFormat['type'] ?? null) === 'text'
                 && ($responseFormat['mime_type'] ?? null) === 'application/json'
@@ -101,8 +104,6 @@ class GeminiTravelPlanGeneratorTest extends TestCase
     {
         $requestPayload = $this->requestPayload();
         unset(
-            $requestPayload['budget'],
-            $requestPayload['transportation'],
             $requestPayload['preferences'],
             $requestPayload['notes'],
         );
@@ -115,6 +116,43 @@ class GeminiTravelPlanGeneratorTest extends TestCase
         $result = $this->generator()->generate($requestPayload);
 
         $this->assertSame('京都2泊3日の旅', $result['title']);
+    }
+
+    #[DataProvider('transportPriorityInstructionProvider')]
+    public function test_transport_priority_is_converted_to_prompt_instruction(
+        string $transportPriority,
+        string $expectedInstruction,
+    ): void {
+        Http::fake([
+            self::ENDPOINT => Http::response($this->interactionResponse(
+                json_encode($this->validResult(), JSON_THROW_ON_ERROR),
+            )),
+        ]);
+        $requestPayload = [
+            ...$this->requestPayload(),
+            'transport_priority' => $transportPriority,
+        ];
+
+        $this->generator()->generate($requestPayload);
+
+        Http::assertSent(
+            fn (Request $request): bool => str_contains(
+                (string) ($request->data()['input'] ?? ''),
+                $expectedInstruction,
+            ),
+        );
+    }
+
+    /**
+     * @return array<string, array{string, string}>
+     */
+    public static function transportPriorityInstructionProvider(): array
+    {
+        return [
+            'おまかせ' => ['おまかせ', '時間・費用・移動負担を総合的に考慮する。'],
+            '時間優先' => ['時間優先', '移動時間を短くすることを優先する。'],
+            '費用優先' => ['費用優先', '移動費を抑えることを優先する。'],
+        ];
     }
 
     /**
@@ -319,13 +357,13 @@ class GeminiTravelPlanGeneratorTest extends TestCase
     private function requestPayload(): array
     {
         return [
-            'destination' => '京都',
+            'prefecture' => '26',
             'start_date' => '2026-08-10',
             'end_date' => '2026-08-12',
             'departure_location' => '東京',
             'number_of_people' => 2,
             'budget' => 100000,
-            'transportation' => 'train',
+            'transport_priority' => 'おまかせ',
             'preferences' => [
                 '寺社を巡りたい',
                 '京都らしい料理を食べたい',

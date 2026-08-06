@@ -70,7 +70,7 @@ class GenerateAiTravelPlanJobTest extends TestCase
         $this->assertNull($aiPlanRequest->error_code);
         $this->assertNull($aiPlanRequest->error_message);
         $this->assertIsArray($result->result_payload);
-        $this->assertSame('京都', $result->result_payload['destination']);
+        $this->assertSame('京都府', $result->result_payload['destination']);
         $this->assertSame(100000, $result->result_payload['estimated_budget']);
         $this->assertCount(3, $result->result_payload['days']);
 
@@ -256,13 +256,13 @@ class GenerateAiTravelPlanJobTest extends TestCase
         return $user->aiPlanRequests()->create([
             'status' => AiPlanRequestStatus::Queued,
             'request_payload' => [
-                'destination' => '京都',
+                'prefecture' => '26',
                 'start_date' => '2026-08-10',
                 'end_date' => '2026-08-12',
                 'departure_location' => '東京',
                 'number_of_people' => 2,
                 'budget' => 100000,
-                'transportation' => 'train',
+                'transport_priority' => 'おまかせ',
                 'preferences' => [
                     '寺社を巡りたい',
                     '京都らしい料理を食べたい',

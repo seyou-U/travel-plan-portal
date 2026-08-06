@@ -3,6 +3,7 @@
 namespace App\Services\Ai;
 
 use App\Contracts\Ai\TravelPlanGenerator;
+use App\Enums\PrefectureCode;
 use Carbon\CarbonImmutable;
 
 class FakeTravelPlanGenerator implements TravelPlanGenerator
@@ -15,9 +16,11 @@ class FakeTravelPlanGenerator implements TravelPlanGenerator
      */
     public function generate(array $requestPayload): array
     {
-        $destination = is_string($requestPayload['destination'] ?? null)
-            ? $requestPayload['destination']
-            : '目的地未定';
+        $destination = PrefectureCode::labelFromCode(
+            is_string($requestPayload['prefecture'] ?? null)
+                ? $requestPayload['prefecture']
+                : null,
+        ) ?? '目的地未定';
         $startDate = is_string($requestPayload['start_date'] ?? null)
             ? $requestPayload['start_date']
             : '1970-01-01';

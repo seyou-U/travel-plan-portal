@@ -4,6 +4,7 @@ namespace App\Services\Ai;
 
 use App\Contracts\Ai\TravelPlanGenerator;
 use App\Enums\GeminiErrorCode;
+use App\Enums\PrefectureCode;
 use App\Exceptions\GeminiGenerationException;
 use App\Exceptions\GeminiInvalidJsonException;
 use App\Exceptions\GeminiOutputValidationException;
@@ -119,14 +120,21 @@ class GeminiTravelPlanGenerator implements TravelPlanGenerator
      */
     private function buildPrompt(array $requestPayload): string
     {
+        $transportPriorityInstruction = $this->transportPriorityInstruction(
+            $requestPayload['transport_priority'] ?? null,
+        );
         $conditions = [
-            'destination' => $requestPayload['destination'] ?? null,
+            'prefecture' => PrefectureCode::labelFromCode(
+                is_string($requestPayload['prefecture'] ?? null)
+                    ? $requestPayload['prefecture']
+                    : null,
+            ),
             'start_date' => $requestPayload['start_date'] ?? null,
             'end_date' => $requestPayload['end_date'] ?? null,
             'departure_location' => $requestPayload['departure_location'] ?? null,
             'number_of_people' => $requestPayload['number_of_people'] ?? null,
             'budget' => $requestPayload['budget'] ?? null,
-            'transportation' => $requestPayload['transportation'] ?? null,
+            'transport_priority' => $requestPayload['transport_priority'] ?? null,
             'preferences' => $requestPayload['preferences'] ?? [],
             'notes' => $requestPayload['notes'] ?? null,
         ];
@@ -152,17 +160,33 @@ class GeminiTravelPlanGenerator implements TravelPlanGenerator
 旅行条件:
 {$conditionsJson}
 
+移動方針:
+{$transportPriorityInstruction}
+
 次の要件をすべて満たす旅程を作成してください。
 - 指定期間の日数とdaysの件数を一致させる
 - 各日の予定を時系列順にする
 - 各日のsort_orderを1から始まる連番にする
 - 無理のない滞在時間と移動時間を考慮する
-- budgetは旅行全体の総予算として扱う
+- 上記の移動方針を、移動手段と経路の選定に反映する
+- destinationにはprefectureで指定された都道府県名を設定する
+- budgetは1人当たりの予算として扱う
+- estimated_budgetは1人当たりの概算予算とする
 - estimated_costは日本円での概算値とし、0以上の整数にする
 - item_typeはspot、meal、hotel、transport、memoのいずれかにする
 - start_dateとend_dateは旅行条件と完全に一致させる
 - 指定されたJSON Schemaに厳密に従い、JSONだけを出力する
 PROMPT;
+    }
+
+    private function transportPriorityInstruction(mixed $transportPriority): string
+    {
+        return match ($transportPriority) {
+            'おまかせ' => '時間・費用・移動負担を総合的に考慮する。',
+            '時間優先' => '移動時間を短くすることを優先する。',
+            '費用優先' => '移動費を抑えることを優先する。',
+            default => '指定なし。時間・費用・移動負担を総合的に考慮する。',
+        };
     }
 
     private function ensureSuccessfulResponse(Response $response): void

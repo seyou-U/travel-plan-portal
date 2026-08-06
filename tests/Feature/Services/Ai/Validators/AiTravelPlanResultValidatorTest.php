@@ -171,7 +171,7 @@ class AiTravelPlanResultValidatorTest extends TestCase
     private function requestPayload(): array
     {
         return [
-            'destination' => '京都',
+            'prefecture' => '26',
             'start_date' => '2026-08-10',
             'end_date' => '2026-08-11',
             'budget' => 100000,
