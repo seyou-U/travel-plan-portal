@@ -57,7 +57,7 @@ class GenerateAiPlanRequestTest extends TestCase
             'budget',
             'transport_priority',
         ]));
-        $this->assertSame('都道府県は必須です。', $validator->errors()->first('prefecture'));
+        $this->assertSame('行き先は必須です。', $validator->errors()->first('prefecture'));
         $this->assertSame('1人当たり予算は必須です。', $validator->errors()->first('budget'));
         $this->assertSame('移動方針は必須です。', $validator->errors()->first('transport_priority'));
     }
@@ -71,7 +71,7 @@ class GenerateAiPlanRequestTest extends TestCase
 
         $this->assertTrue($validator->fails());
         $this->assertSame(
-            '都道府県は選択肢から指定してください。',
+            '行き先は選択肢から指定してください。',
             $validator->errors()->first('prefecture'),
         );
     }
@@ -134,7 +134,7 @@ class GenerateAiPlanRequestTest extends TestCase
 
         $this->assertTrue($validator->fails());
         $this->assertSame(
-            '移動方針はおまかせ、時間優先、費用優先のいずれかを指定してください。',
+            '移動方針はおまかせ、費用、時間のいずれかを指定してください。',
             $validator->errors()->first('transport_priority'),
         );
     }
@@ -158,8 +158,8 @@ class GenerateAiPlanRequestTest extends TestCase
     {
         return [
             'おまかせ' => ['おまかせ'],
-            '時間優先' => ['時間優先'],
-            '費用優先' => ['費用優先'],
+            '費用' => ['費用'],
+            '時間' => ['時間'],
         ];
     }
 

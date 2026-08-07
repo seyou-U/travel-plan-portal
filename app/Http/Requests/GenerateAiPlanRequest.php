@@ -28,13 +28,13 @@ class GenerateAiPlanRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'prefecture' => ['required', 'string', Rule::in(PrefectureCode::values())],
+            'prefecture' => ['required', 'string', 'max:100', Rule::in(PrefectureCode::values())],
             'start_date' => ['required', 'date_format:Y-m-d', 'after_or_equal:today'],
             'end_date' => ['required', 'date_format:Y-m-d', 'after_or_equal:start_date'],
             'departure_location' => ['required', 'string', 'max:100'],
             'number_of_people' => ['required', 'integer', 'between:1,20'],
             'budget' => ['required', 'integer', 'between:0,10000000'],
-            'transport_priority' => ['required', 'string', Rule::in(['おまかせ', '時間優先', '費用優先'])],
+            'transport_priority' => ['required', 'string', Rule::in(['おまかせ', '費用', '時間'])],
             'preferences' => ['nullable', 'array', 'max:10'],
             'preferences.*' => ['nullable', 'string', 'max:100'],
             'notes' => ['nullable', 'string', 'max:1000'],
@@ -55,11 +55,12 @@ class GenerateAiPlanRequest extends FormRequest
             'date_format' => ':attributeはY-m-d形式で入力してください。',
             'start_date.after_or_equal' => '出発日は本日以降の日付を入力してください。',
             'end_date.after_or_equal' => '帰着日には出発日以降の日付を指定してください。',
-            'prefecture.in' => '都道府県は選択肢から指定してください。',
+            'prefecture.max' => '行き先は100文字以内で入力してください。',
+            'prefecture.in' => '行き先は選択肢から指定してください。',
             'departure_location.max' => '出発地は100文字以内で入力してください。',
             'number_of_people.between' => '旅行人数は1人以上20人以下で入力してください。',
             'budget.between' => '1人当たり予算は0円以上10,000,000円以下で入力してください。',
-            'transport_priority.in' => '移動方針はおまかせ、時間優先、費用優先のいずれかを指定してください。',
+            'transport_priority.in' => '移動方針はおまかせ、費用、時間のいずれかを指定してください。',
             'preferences.array' => '希望条件は配列で入力してください。',
             'preferences.max' => '希望条件は10件以内で入力してください。',
             'preferences.*.max' => '希望条件は1件につき100文字以内で入力してください。',
@@ -110,7 +111,7 @@ class GenerateAiPlanRequest extends FormRequest
     public function attributes(): array
     {
         return [
-            'prefecture' => '都道府県',
+            'prefecture' => '行き先',
             'start_date' => '出発日',
             'end_date' => '帰着日',
             'departure_location' => '出発地',
