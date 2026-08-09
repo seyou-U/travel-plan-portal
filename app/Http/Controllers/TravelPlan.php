@@ -129,7 +129,7 @@ class TravelPlan extends Controller
                 ? collect(DB::table('travel_plan_items')
                     ->whereIn('travel_plan_day_id', $dayIds)
                     ->orderBy('travel_plan_day_id')
-                    ->orderBy('start_time')
+                    ->orderBy('sort_order')
                     ->get())
                 : collect();
 
@@ -137,12 +137,16 @@ class TravelPlan extends Controller
                 ->groupBy('travel_plan_day_id')
                 ->map(function ($dayItems) {
                     return $dayItems->map(function ($item) {
+                        $durationMinutes = $item->item_type === 'transport'
+                            ? (int) $item->travel_minutes
+                            : (int) $item->stay_minutes;
+
                         return [
                             'title' => $item->title,
                             'spot_name' => $item->spot_name,
                             'start_time' => $item->start_time,
                             'end_time' => Carbon::parse($item->start_time)
-                                ->addMinutes((int) $item->stay_minutes)
+                                ->addMinutes($durationMinutes)
                                 ->format('H:i:s'),
                             'transportation_type' => $item->transportation_type,
                             'travel_minutes' => (int) $item->travel_minutes,
