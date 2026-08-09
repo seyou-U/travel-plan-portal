@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\TransportationType;
+use App\Enums\TravelPlanItemType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -15,6 +17,7 @@ class TravelPlanItem extends Model
     protected $fillable = [
         'travel_plan_day_id',
         'spot_id',
+        'sort_order',
         'title',
         'spot_name',
         'start_time',
@@ -24,18 +27,21 @@ class TravelPlanItem extends Model
         'transportation_cost',
         'visit_cost',
         'memo',
+        'item_type',
     ];
 
     protected function casts(): array
     {
         return [
             'spot_id' => 'integer',
+            'sort_order' => 'integer',
             'start_time' => 'datetime:H:i',
             'stay_minutes' => 'integer',
-            'transportation_type' => 'integer',
+            'transportation_type' => TransportationType::class,
             'travel_minutes' => 'integer',
             'transportation_cost' => 'integer',
             'visit_cost' => 'integer',
+            'item_type' => TravelPlanItemType::class,
         ];
     }
 

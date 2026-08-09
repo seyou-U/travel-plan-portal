@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\TravelPlanItemType;
 use App\Models\TravelPlanDay;
 use App\Models\TravelPlanItem;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -24,6 +25,7 @@ class TravelPlanItemFactory extends Factory
 
         return [
             'travel_plan_day_id' => TravelPlanDay::factory(),
+            'sort_order' => 1,
             'title' => fake()->randomElement([
                 '大阪城を見にいく',
                 'カフェで休憩',
@@ -38,10 +40,11 @@ class TravelPlanItemFactory extends Factory
             ]),
             'start_time' => sprintf('%02d:%s:00', $startHour, $startMinute),
             'stay_minutes' => $stayMinutes,
-            'transportation_type' => fake()->randomElement([1, 2, 3, 4]),
-            'travel_minutes' => fake()->randomElement([10, 20, 30, 45, 60]),
-            'transportation_cost' => fake()->numberBetween(0, 10000),
+            'transportation_type' => null,
+            'travel_minutes' => 0,
+            'transportation_cost' => 0,
             'visit_cost' => fake()->numberBetween(0, 5000),
+            'item_type' => TravelPlanItemType::Spot,
         ];
     }
 }
