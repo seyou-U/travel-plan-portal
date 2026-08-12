@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\GenerateAiPlanController;
+use App\Http\Controllers\Api\ShowAiPlanRequestStatusController;
 use App\Http\Controllers\AuthenticatedUserController;
 use App\Http\Controllers\ForgotPasswordController;
 use App\Http\Controllers\LoginController;
@@ -21,6 +22,7 @@ Route::get('/me', [AuthenticatedUserController::class, 'show']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [LogoutController::class, 'destroy']);
     Route::post('/ai/plans/generate', GenerateAiPlanController::class);
+    Route::get('/ai/requests/{id}', ShowAiPlanRequestStatusController::class);
 
     Route::get('/plans', [TravelPlan::class, 'index']);
     Route::get('/plans/{uuid}', [TravelPlan::class, 'show']);
