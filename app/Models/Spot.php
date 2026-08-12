@@ -25,6 +25,9 @@ class Spot extends Model
         ];
     }
 
+    /**
+     * @return HasMany<TravelPlanItem, $this>
+     */
     public function travelPlanItems(): HasMany
     {
         return $this->hasMany(TravelPlanItem::class);

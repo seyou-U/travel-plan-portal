@@ -34,6 +34,8 @@ class AiPlanResult extends Model
 
     /**
      * この生成結果に対応するAI旅程リクエスト。
+     *
+     * @return BelongsTo<AiPlanRequest, $this>
      */
     public function aiPlanRequest(): BelongsTo
     {

@@ -45,11 +45,17 @@ class TravelPlanItem extends Model
         ];
     }
 
+    /**
+     * @return BelongsTo<TravelPlanDay, $this>
+     */
     public function travelPlanDay(): BelongsTo
     {
         return $this->belongsTo(TravelPlanDay::class);
     }
 
+    /**
+     * @return BelongsTo<Spot, $this>
+     */
     public function spot(): BelongsTo
     {
         return $this->belongsTo(Spot::class);

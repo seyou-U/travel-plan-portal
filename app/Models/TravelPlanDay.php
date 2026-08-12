@@ -28,11 +28,17 @@ class TravelPlanDay extends Model
         ];
     }
 
+    /**
+     * @return BelongsTo<TravelPlan, $this>
+     */
     public function travelPlan(): BelongsTo
     {
         return $this->belongsTo(TravelPlan::class);
     }
 
+    /**
+     * @return HasMany<TravelPlanItem, $this>
+     */
     public function items(): HasMany
     {
         return $this->hasMany(TravelPlanItem::class);

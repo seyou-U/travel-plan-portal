@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class TravelPlan extends Model
@@ -30,11 +31,17 @@ class TravelPlan extends Model
         ];
     }
 
-    public function days()
+    /**
+     * @return HasMany<TravelPlanDay, $this>
+     */
+    public function days(): HasMany
     {
         return $this->hasMany(TravelPlanDay::class);
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

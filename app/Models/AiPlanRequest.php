@@ -47,6 +47,8 @@ class AiPlanRequest extends Model
 
     /**
      * このAI旅程生成を依頼したユーザー。
+     *
+     * @return BelongsTo<User, $this>
      */
     public function user(): BelongsTo
     {
@@ -55,6 +57,8 @@ class AiPlanRequest extends Model
 
     /**
      * このAI旅程リクエストに対する生成結果。
+     *
+     * @return HasOne<AiPlanResult, $this>
      */
     public function result(): HasOne
     {
