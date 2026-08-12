@@ -73,6 +73,17 @@ class GenerateAiTravelPlanJobTest extends TestCase
         $this->assertSame('京都府', $result->result_payload['destination']);
         $this->assertSame(100000, $result->result_payload['estimated_budget']);
         $this->assertCount(3, $result->result_payload['days']);
+        $this->assertSame([
+            'sort_order',
+            'item_type',
+            'title',
+            'start_time',
+            'stay_minutes',
+            'visit_cost',
+            'transportation_type',
+            'transportation_cost',
+            'memo',
+        ], array_keys($result->result_payload['days'][0]['items'][0]));
 
         $job->handle($generator);
 

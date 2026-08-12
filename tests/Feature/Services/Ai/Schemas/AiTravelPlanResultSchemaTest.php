@@ -41,10 +41,12 @@ class AiTravelPlanResultSchemaTest extends TestCase
             'sort_order',
             'item_type',
             'title',
-            'description',
             'start_time',
-            'end_time',
-            'estimated_cost',
+            'stay_minutes',
+            'visit_cost',
+            'transportation_type',
+            'transportation_cost',
+            'memo',
         ], $item['required']);
         $this->assertSame(
             AiTravelPlanResultSchema::ITEM_TYPES,
@@ -56,8 +58,29 @@ class AiTravelPlanResultSchemaTest extends TestCase
         );
         $this->assertSame(
             ['string', 'null'],
-            $item['properties']['end_time']['type'],
+            $item['properties']['transportation_type']['type'],
         );
+        $this->assertSame([
+            'walk',
+            'train',
+            'bus',
+            'car',
+            'taxi',
+            'plane',
+            'bicycle',
+            'other',
+            null,
+        ], $item['properties']['transportation_type']['enum']);
+        $this->assertSame(
+            ['string', 'null'],
+            $item['properties']['memo']['type'],
+        );
+        $this->assertSame(1, $item['properties']['stay_minutes']['minimum']);
+        $this->assertSame(0, $item['properties']['visit_cost']['minimum']);
+        $this->assertSame(0, $item['properties']['transportation_cost']['minimum']);
+        $this->assertArrayNotHasKey('description', $item['properties']);
+        $this->assertArrayNotHasKey('end_time', $item['properties']);
+        $this->assertArrayNotHasKey('estimated_cost', $item['properties']);
     }
 
     public function test_schema_can_restrict_days_to_requested_period(): void

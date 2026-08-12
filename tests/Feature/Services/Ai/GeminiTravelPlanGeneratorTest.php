@@ -77,6 +77,8 @@ class GeminiTravelPlanGeneratorTest extends TestCase
                 && str_contains($data['input'], '1人当たりの予算')
                 && str_contains($data['input'], '"transport_priority": "おまかせ"')
                 && str_contains($data['input'], '時間・費用・移動負担を総合的に考慮する。')
+                && str_contains($data['input'], 'item_typeはspot、meal、hotel、transportのいずれか')
+                && str_contains($data['input'], 'transportation_typeはwalk、train、bus、car、taxi、plane、bicycle、other')
                 && is_array($responseFormat)
                 && ($responseFormat['type'] ?? null) === 'text'
                 && ($responseFormat['mime_type'] ?? null) === 'application/json'
@@ -389,10 +391,12 @@ class GeminiTravelPlanGeneratorTest extends TestCase
                         'sort_order' => 1,
                         'item_type' => 'spot',
                         'title' => '清水寺',
-                        'description' => '清水寺を観光します。',
                         'start_time' => '09:00',
-                        'end_time' => '11:00',
-                        'estimated_cost' => 500,
+                        'stay_minutes' => 120,
+                        'visit_cost' => 500,
+                        'transportation_type' => null,
+                        'transportation_cost' => 0,
+                        'memo' => '午前中の訪問がおすすめです。',
                     ],
                 ],
             ];
