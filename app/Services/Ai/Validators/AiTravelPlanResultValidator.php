@@ -3,6 +3,7 @@
 namespace App\Services\Ai\Validators;
 
 use App\Enums\GeminiErrorCode;
+use App\Enums\TransportationType;
 use App\Exceptions\GeminiGenerationException;
 use App\Exceptions\GeminiOutputValidationException;
 use App\Services\Ai\Schemas\AiTravelPlanResultSchema;
@@ -17,8 +18,6 @@ class AiTravelPlanResultValidator
     private const SUMMARY_MAX_LENGTH = 1000;
 
     private const DESTINATION_MAX_LENGTH = 100;
-
-    private const DESCRIPTION_MAX_LENGTH = 1000;
 
     /**
      * @param  array<string, mixed>  $result
@@ -46,7 +45,7 @@ class AiTravelPlanResultValidator
             'result.days.*.items' => ['required', 'array', 'min:1'],
             'result.days.*.items.*' => [
                 'required',
-                'array:sort_order,item_type,title,description,start_time,end_time,estimated_cost',
+                'array:sort_order,item_type,title,start_time,stay_minutes,visit_cost,transportation_type,transportation_cost,memo',
             ],
             'result.days.*.items.*.sort_order' => ['required', 'integer', 'min:1'],
             'result.days.*.items.*.item_type' => [
@@ -59,24 +58,22 @@ class AiTravelPlanResultValidator
                 'string',
                 'max:'.self::TITLE_MAX_LENGTH,
             ],
-            'result.days.*.items.*.description' => [
-                'required',
-                'string',
-                'max:'.self::DESCRIPTION_MAX_LENGTH,
-            ],
             'result.days.*.items.*.start_time' => [
                 'present',
                 'nullable',
                 'string',
                 'date_format:H:i',
             ],
-            'result.days.*.items.*.end_time' => [
+            'result.days.*.items.*.stay_minutes' => ['required', 'integer', 'min:1'],
+            'result.days.*.items.*.visit_cost' => ['required', 'integer', 'min:0'],
+            'result.days.*.items.*.transportation_type' => [
                 'present',
                 'nullable',
                 'string',
-                'date_format:H:i',
+                'in:'.implode(',', array_column(TransportationType::cases(), 'value')),
             ],
-            'result.days.*.items.*.estimated_cost' => ['required', 'integer', 'min:0'],
+            'result.days.*.items.*.transportation_cost' => ['required', 'integer', 'min:0'],
+            'result.days.*.items.*.memo' => ['present', 'nullable', 'string'],
         ]);
 
         if ($validator->fails()) {
@@ -139,15 +136,22 @@ class AiTravelPlanResultValidator
                     $errors["{$itemPath}.sort_order"][] = 'sort_orderは1から始まる連番にしてください。';
                 }
 
-                $startTime = $item['start_time'] ?? null;
-                $endTime = $item['end_time'] ?? null;
+                if (($item['item_type'] ?? null) === 'transport') {
+                    if (! is_string($item['transportation_type'] ?? null)) {
+                        $errors["{$itemPath}.transportation_type"][] = '移動予定には移動手段を設定してください。';
+                    }
 
-                if (
-                    is_string($startTime)
-                    && is_string($endTime)
-                    && $startTime > $endTime
-                ) {
-                    $errors["{$itemPath}.end_time"][] = '終了時刻は開始時刻以降にしてください。';
+                    if (($item['visit_cost'] ?? null) !== 0) {
+                        $errors["{$itemPath}.visit_cost"][] = '移動予定のvisit_costは0にしてください。';
+                    }
+                } else {
+                    if (($item['transportation_type'] ?? null) !== null) {
+                        $errors["{$itemPath}.transportation_type"][] = '移動予定以外のtransportation_typeはnullにしてください。';
+                    }
+
+                    if (($item['transportation_cost'] ?? null) !== 0) {
+                        $errors["{$itemPath}.transportation_cost"][] = '移動予定以外のtransportation_costは0にしてください。';
+                    }
                 }
             }
         }

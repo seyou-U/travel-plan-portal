@@ -2,6 +2,7 @@
 
 namespace App\Services\Ai\Schemas;
 
+use App\Enums\TransportationType;
 use InvalidArgumentException;
 
 class AiTravelPlanResultSchema
@@ -14,7 +15,6 @@ class AiTravelPlanResultSchema
         'meal',
         'hotel',
         'transport',
-        'memo',
     ];
 
     /**
@@ -51,19 +51,29 @@ class AiTravelPlanResultSchema
                                     'enum' => self::ITEM_TYPES,
                                 ],
                                 'title' => ['type' => 'string'],
-                                'description' => ['type' => 'string'],
                                 'start_time' => ['type' => ['string', 'null']],
-                                'end_time' => ['type' => ['string', 'null']],
-                                'estimated_cost' => ['type' => 'integer', 'minimum' => 0],
+                                'stay_minutes' => ['type' => 'integer', 'minimum' => 1],
+                                'visit_cost' => ['type' => 'integer', 'minimum' => 0],
+                                'transportation_type' => [
+                                    'type' => ['string', 'null'],
+                                    'enum' => [
+                                        ...array_column(TransportationType::cases(), 'value'),
+                                        null,
+                                    ],
+                                ],
+                                'transportation_cost' => ['type' => 'integer', 'minimum' => 0],
+                                'memo' => ['type' => ['string', 'null']],
                             ],
                             'required' => [
                                 'sort_order',
                                 'item_type',
                                 'title',
-                                'description',
                                 'start_time',
-                                'end_time',
-                                'estimated_cost',
+                                'stay_minutes',
+                                'visit_cost',
+                                'transportation_type',
+                                'transportation_cost',
+                                'memo',
                             ],
                         ],
                     ],

@@ -10,5 +10,4 @@ enum TravelPlanItemType: string
     case Meal = 'meal';
     case Hotel = 'hotel';
     case Transport = 'transport';
-    case Memo = 'memo';
 }

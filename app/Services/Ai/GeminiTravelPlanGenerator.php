@@ -172,8 +172,13 @@ class GeminiTravelPlanGenerator implements TravelPlanGenerator
 - destinationにはprefectureで指定された都道府県名を設定する
 - budgetは1人当たりの予算として扱う
 - estimated_budgetは1人当たりの概算予算とする
-- estimated_costは日本円での概算値とし、0以上の整数にする
-- item_typeはspot、meal、hotel、transport、memoのいずれかにする
+- estimated_budget、visit_cost、transportation_costは1人当たりの日本円での概算値とする
+- item_typeはspot、meal、hotel、transportのいずれかにする
+- stay_minutesは予定の所要時間とし、移動予定では移動時間を設定する
+- item_typeがtransportの場合、transportation_typeに移動手段を設定し、visit_costは0にする
+- item_typeがtransport以外の場合、transportation_typeはnull、transportation_costは0にする
+- transportation_typeはwalk、train、bus、car、taxi、plane、bicycle、otherのいずれかにする
+- memoは各予定に付随する任意の注記とし、注記がなければnullにする
 - start_dateとend_dateは旅行条件と完全に一致させる
 - 指定されたJSON Schemaに厳密に従い、JSONだけを出力する
 PROMPT;
