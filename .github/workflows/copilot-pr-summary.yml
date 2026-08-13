@@ -84,7 +84,6 @@ jobs:
       - name: Generate PR summary
         id: copilot
         if: steps.diff.outputs.has_diff == 'true'
-        continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
@@ -94,10 +93,19 @@ jobs:
             --max-ai-credits 35 \
             > generated-summary.md
 
+      - name: Check generated summary
+        id: summary
+        run: |
+          if [ -s generated-summary.md ]; then
+            echo "has_summary=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_summary=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Get current PR body
-        if: steps.copilot.outcome == 'success'
+        if: steps.summary.outputs.has_summary == 'true'
         env:
-          GH_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           gh pr view "$PR_NUMBER" \
@@ -105,7 +113,7 @@ jobs:
             --jq '.body' > current-body.md
 
       - name: Build new PR body
-        if: steps.copilot.outcome == 'success'
+        if: steps.summary.outputs.has_summary == 'true'
         run: |
           python3 <<'PY'
           import re
@@ -143,9 +151,9 @@ jobs:
           PY
 
       - name: Update PR body
-        if: steps.copilot.outcome == 'success'
+        if: steps.summary.outputs.has_summary == 'true'
         env:
-          GH_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           gh pr edit "$PR_NUMBER" \
