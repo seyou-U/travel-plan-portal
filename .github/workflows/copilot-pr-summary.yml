@@ -1,0 +1,152 @@
+name: Copilot PR Summary
+
+on:
+  pull_request:
+    types:
+      - opened
+      - ready_for_review
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  summarize:
+    if: >
+      github.event.pull_request.draft == false &&
+      github.event.pull_request.head.repo.full_name == github.repository
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+
+      - name: Install Copilot CLI
+        run: npm install -g @github/copilot
+
+      - name: Create PR diff
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          git diff \
+            --unified=1 \
+            "$BASE_SHA...$HEAD_SHA" \
+            > pr-diff.txt
+
+          head -c 20000 pr-diff.txt > pr-diff-limited.txt
+
+      - name: Check diff
+        id: diff
+        run: |
+          if [ -s pr-diff-limited.txt ]; then
+            echo "has_diff=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_diff=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create prompt
+        if: steps.diff.outputs.has_diff == 'true'
+        run: |
+          cat <<'EOF' > prompt.txt
+          以下はPull RequestのGit差分です。
+
+          レビュー担当者が変更内容を短時間で理解できるよう、
+          日本語で簡潔に要約してください。
+
+          ### 実装内容
+          - 変更内容
+
+          ### 主な変更ファイル
+          - `ファイル名`: 変更内容
+
+          ### テスト
+          - 追加・変更されたテスト内容
+
+          ルール:
+          - Git差分から確認できる事実だけを書く
+          - 推測しない
+          - 最大10項目
+          - Markdownのみ出力
+          - 前置きを書かない
+
+          ## Git diff
+          EOF
+
+          cat pr-diff-limited.txt >> prompt.txt
+
+      - name: Generate PR summary
+        id: copilot
+        if: steps.diff.outputs.has_diff == 'true'
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          copilot \
+            --yolo \
+            -p "$(cat prompt.txt)" \
+            --max-ai-credits 35 \
+            > generated-summary.md
+
+      - name: Get current PR body
+        if: steps.copilot.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          gh pr view "$PR_NUMBER" \
+            --json body \
+            --jq '.body' > current-body.md
+
+      - name: Build new PR body
+        if: steps.copilot.outcome == 'success'
+        run: |
+          python3 <<'PY'
+          import re
+
+          with open("current-body.md", encoding="utf-8") as f:
+              body = f.read()
+
+          with open("generated-summary.md", encoding="utf-8") as f:
+              summary = f.read().strip()
+
+          start = "<!-- copilot-summary:start -->"
+          end = "<!-- copilot-summary:end -->"
+
+          block = f"""## Copilotによる変更概要
+
+          {start}
+
+          {summary}
+
+          {end}"""
+
+          pattern = re.compile(
+              r"## Copilotによる変更概要.*?"
+              r"<!-- copilot-summary:end -->",
+              re.DOTALL,
+          )
+
+          if pattern.search(body):
+              body = pattern.sub(block, body)
+          else:
+              body = body.rstrip() + "\n\n" + block + "\n"
+
+          with open("new-body.md", "w", encoding="utf-8") as f:
+              f.write(body)
+          PY
+
+      - name: Update PR body
+        if: steps.copilot.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          gh pr edit "$PR_NUMBER" \
+            --body-file new-body.md
