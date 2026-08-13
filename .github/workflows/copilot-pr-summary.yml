@@ -86,7 +86,7 @@ jobs:
         id: copilot
         if: steps.diff.outputs.has_diff == 'true'
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_TOKEN }}
         run: |
           copilot \
             --yolo \
