@@ -227,6 +227,19 @@ class GeminiTravelPlanGeneratorTest extends TestCase
         );
     }
 
+    public function test_connection_failure_is_retryable(): void
+    {
+        Http::fake(function (): never {
+            throw new ConnectionException('Could not resolve host.');
+        });
+
+        $this->assertGeminiFailure(
+            GeminiErrorCode::ConnectionFailed,
+            true,
+            fn (): array => $this->generator()->generate($this->requestPayload()),
+        );
+    }
+
     public function test_missing_model_output_fails(): void
     {
         Http::fake([
@@ -268,6 +281,20 @@ class GeminiTravelPlanGeneratorTest extends TestCase
             false,
             fn (): array => $this->generator()->generate($this->requestPayload()),
             GeminiInvalidJsonException::class,
+        );
+    }
+
+    public function test_valid_json_that_is_not_an_object_fails_application_validation(): void
+    {
+        Http::fake([
+            self::ENDPOINT => Http::response($this->interactionResponse('true')),
+        ]);
+
+        $this->assertGeminiFailure(
+            GeminiErrorCode::OutputValidationFailed,
+            false,
+            fn (): array => $this->generator()->generate($this->requestPayload()),
+            GeminiOutputValidationException::class,
         );
     }
 
