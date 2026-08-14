@@ -138,6 +138,14 @@ class GenerateAiPlanRequestApiTest extends TestCase
         ], ['budget']);
     }
 
+    public function test_negative_budget_returns_unprocessable_entity(): void
+    {
+        $this->assertInvalid([
+            ...$this->validPayload(),
+            'budget' => -1,
+        ], ['budget']);
+    }
+
     public function test_non_string_transport_priority_returns_unprocessable_entity(): void
     {
         $this->assertInvalid([
@@ -179,6 +187,14 @@ class GenerateAiPlanRequestApiTest extends TestCase
             ...$this->validPayload(),
             'preferences' => '寺社を巡りたい',
         ], ['preferences']);
+    }
+
+    public function test_non_string_preference_item_returns_unprocessable_entity(): void
+    {
+        $this->assertInvalid([
+            ...$this->validPayload(),
+            'preferences' => [['寺社を巡りたい']],
+        ], ['preferences.0']);
     }
 
     /**

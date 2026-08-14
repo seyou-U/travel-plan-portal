@@ -114,6 +114,72 @@ class GenerateAiPlanRequestTest extends TestCase
         $this->assertTrue($validator->errors()->has('number_of_people'));
     }
 
+    #[DataProvider('numberOfPeopleBoundaryProvider')]
+    public function test_number_of_people_boundaries_pass(int $numberOfPeople): void
+    {
+        $validator = $this->validator([
+            ...$this->validInput(),
+            'number_of_people' => $numberOfPeople,
+        ]);
+
+        $this->assertFalse($validator->fails());
+    }
+
+    /**
+     * @return array<string, array{int}>
+     */
+    public static function numberOfPeopleBoundaryProvider(): array
+    {
+        return [
+            'minimum' => [1],
+            'maximum' => [20],
+        ];
+    }
+
+    public function test_number_of_people_above_maximum_fails(): void
+    {
+        $validator = $this->validator([
+            ...$this->validInput(),
+            'number_of_people' => 21,
+        ]);
+
+        $this->assertTrue($validator->fails());
+        $this->assertTrue($validator->errors()->has('number_of_people'));
+    }
+
+    #[DataProvider('budgetBoundaryProvider')]
+    public function test_budget_boundaries_pass(int $budget): void
+    {
+        $validator = $this->validator([
+            ...$this->validInput(),
+            'budget' => $budget,
+        ]);
+
+        $this->assertFalse($validator->fails());
+    }
+
+    /**
+     * @return array<string, array{int}>
+     */
+    public static function budgetBoundaryProvider(): array
+    {
+        return [
+            'minimum' => [0],
+            'maximum' => [10000000],
+        ];
+    }
+
+    public function test_negative_budget_fails(): void
+    {
+        $validator = $this->validator([
+            ...$this->validInput(),
+            'budget' => -1,
+        ]);
+
+        $this->assertTrue($validator->fails());
+        $this->assertTrue($validator->errors()->has('budget'));
+    }
+
     public function test_non_string_transport_priority_fails(): void
     {
         $validator = $this->validator([
@@ -225,6 +291,72 @@ class GenerateAiPlanRequestTest extends TestCase
 
         $this->assertFalse($validator->fails());
         $this->assertSame([null], $validator->validated()['preferences']);
+    }
+
+    public function test_preferences_accepts_ten_items(): void
+    {
+        $preferences = array_fill(0, 10, '寺社を巡りたい');
+        $validator = $this->validator([
+            ...$this->validInput(),
+            'preferences' => $preferences,
+        ]);
+
+        $this->assertFalse($validator->fails());
+        $this->assertSame($preferences, $validator->validated()['preferences']);
+    }
+
+    public function test_preferences_rejects_more_than_ten_items(): void
+    {
+        $validator = $this->validator([
+            ...$this->validInput(),
+            'preferences' => array_fill(0, 11, '寺社を巡りたい'),
+        ]);
+
+        $this->assertTrue($validator->fails());
+        $this->assertTrue($validator->errors()->has('preferences'));
+    }
+
+    public function test_non_string_preference_item_fails(): void
+    {
+        $validator = $this->validator([
+            ...$this->validInput(),
+            'preferences' => [['寺社を巡りたい']],
+        ]);
+
+        $this->assertTrue($validator->fails());
+        $this->assertTrue($validator->errors()->has('preferences.0'));
+    }
+
+    public function test_preference_item_length_boundary_is_validated(): void
+    {
+        $validValidator = $this->validator([
+            ...$this->validInput(),
+            'preferences' => [str_repeat('旅', 100)],
+        ]);
+        $invalidValidator = $this->validator([
+            ...$this->validInput(),
+            'preferences' => [str_repeat('旅', 101)],
+        ]);
+
+        $this->assertFalse($validValidator->fails());
+        $this->assertTrue($invalidValidator->fails());
+        $this->assertTrue($invalidValidator->errors()->has('preferences.0'));
+    }
+
+    public function test_notes_length_boundary_is_validated(): void
+    {
+        $validValidator = $this->validator([
+            ...$this->validInput(),
+            'notes' => str_repeat('旅', 1000),
+        ]);
+        $invalidValidator = $this->validator([
+            ...$this->validInput(),
+            'notes' => str_repeat('旅', 1001),
+        ]);
+
+        $this->assertFalse($validValidator->fails());
+        $this->assertTrue($invalidValidator->fails());
+        $this->assertTrue($invalidValidator->errors()->has('notes'));
     }
 
     /**
