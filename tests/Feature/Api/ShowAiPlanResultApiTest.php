@@ -66,6 +66,8 @@ class ShowAiPlanResultApiTest extends TestCase
             ->assertJsonPath('data.result.days.0.items.1.visit_cost', 0)
             ->assertJsonPath('data.result.days.0.items.1.transportation_cost', 230)
             ->assertJsonMissingPath('data.result.days.0.items.0.description')
+            ->assertJsonMissingPath('data.result.days.0.items.0.end_time')
+            ->assertJsonMissingPath('data.result.days.0.items.0.estimated_cost')
             ->assertJsonMissingPath('data.result.days.0.items.0.transport_type')
             ->assertJsonMissingPath('data.user_id')
             ->assertJsonMissingPath('data.request_payload')
