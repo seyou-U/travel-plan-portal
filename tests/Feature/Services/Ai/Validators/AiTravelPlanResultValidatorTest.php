@@ -24,7 +24,62 @@ class AiTravelPlanResultValidatorTest extends TestCase
         $this->assertSame(150000, $validated['estimated_budget']);
     }
 
-    public function test_valid_transport_item_passes(): void
+    public function test_valid_one_day_result_passes(): void
+    {
+        $requestPayload = [
+            ...$this->requestPayload(),
+            'end_date' => '2026-08-10',
+        ];
+        $result = [
+            ...$this->validResult(),
+            'end_date' => '2026-08-10',
+            'days' => [$this->validDay(1, '2026-08-10', null)],
+        ];
+
+        $this->assertSame(
+            $result,
+            $this->validator()->validate($result, $requestPayload),
+        );
+    }
+
+    public function test_zero_cost_boundaries_pass(): void
+    {
+        $result = $this->validResult();
+        $result['estimated_budget'] = 0;
+        $result['days'][0]['items'][0]['visit_cost'] = 0;
+
+        $this->assertSame(
+            $result,
+            $this->validator()->validate($result, $this->requestPayload()),
+        );
+    }
+
+    #[DataProvider('nonTransportItemTypeProvider')]
+    public function test_valid_non_transport_item_types_pass(string $itemType): void
+    {
+        $result = $this->validResult();
+        $result['days'][0]['items'][0]['item_type'] = $itemType;
+
+        $this->assertSame(
+            $result,
+            $this->validator()->validate($result, $this->requestPayload()),
+        );
+    }
+
+    /**
+     * @return array<string, array{string}>
+     */
+    public static function nonTransportItemTypeProvider(): array
+    {
+        return [
+            'spot' => ['spot'],
+            'meal' => ['meal'],
+            'hotel' => ['hotel'],
+        ];
+    }
+
+    #[DataProvider('transportationTypeProvider')]
+    public function test_valid_transportation_types_pass(string $transportationType): void
     {
         $result = $this->validResult();
         $result['days'][0]['items'][0] = [
@@ -34,7 +89,7 @@ class AiTravelPlanResultValidatorTest extends TestCase
             'start_time' => '11:00',
             'stay_minutes' => 30,
             'visit_cost' => 0,
-            'transportation_type' => 'bus',
+            'transportation_type' => $transportationType,
             'transportation_cost' => 230,
             'memo' => null,
         ];
@@ -42,6 +97,23 @@ class AiTravelPlanResultValidatorTest extends TestCase
         $validated = $this->validator()->validate($result, $this->requestPayload());
 
         $this->assertSame($result, $validated);
+    }
+
+    /**
+     * @return array<string, array{string}>
+     */
+    public static function transportationTypeProvider(): array
+    {
+        return [
+            'walk' => ['walk'],
+            'train' => ['train'],
+            'bus' => ['bus'],
+            'car' => ['car'],
+            'taxi' => ['taxi'],
+            'plane' => ['plane'],
+            'bicycle' => ['bicycle'],
+            'other' => ['other'],
+        ];
     }
 
     /**
@@ -86,6 +158,14 @@ class AiTravelPlanResultValidatorTest extends TestCase
                 ...$result,
                 'estimated_budget' => -1,
             ]],
+            'estimated budget is numeric string' => [static fn (array $result): array => [
+                ...$result,
+                'estimated_budget' => '0',
+            ]],
+            'estimated budget is null' => [static fn (array $result): array => [
+                ...$result,
+                'estimated_budget' => null,
+            ]],
             'invalid item type' => [static function (array $result): array {
                 $result['days'][0]['items'][0]['item_type'] = 'invalid';
 
@@ -101,13 +181,43 @@ class AiTravelPlanResultValidatorTest extends TestCase
 
                 return $result;
             }],
+            'stay minutes is numeric string' => [static function (array $result): array {
+                $result['days'][0]['items'][0]['stay_minutes'] = '1';
+
+                return $result;
+            }],
+            'stay minutes is null' => [static function (array $result): array {
+                $result['days'][0]['items'][0]['stay_minutes'] = null;
+
+                return $result;
+            }],
             'negative visit cost' => [static function (array $result): array {
                 $result['days'][0]['items'][0]['visit_cost'] = -1;
 
                 return $result;
             }],
+            'visit cost is numeric string' => [static function (array $result): array {
+                $result['days'][0]['items'][0]['visit_cost'] = '0';
+
+                return $result;
+            }],
+            'visit cost is null' => [static function (array $result): array {
+                $result['days'][0]['items'][0]['visit_cost'] = null;
+
+                return $result;
+            }],
             'negative transportation cost' => [static function (array $result): array {
                 $result['days'][0]['items'][0]['transportation_cost'] = -1;
+
+                return $result;
+            }],
+            'transportation cost is numeric string' => [static function (array $result): array {
+                $result['days'][0]['items'][0]['transportation_cost'] = '0';
+
+                return $result;
+            }],
+            'transportation cost is null' => [static function (array $result): array {
+                $result['days'][0]['items'][0]['transportation_cost'] = null;
 
                 return $result;
             }],
@@ -163,6 +273,15 @@ class AiTravelPlanResultValidatorTest extends TestCase
             ]],
             'days count mismatch' => [static function (array $result): array {
                 array_pop($result['days']);
+
+                return $result;
+            }],
+            'days count exceeds travel period' => [static function (array $result): array {
+                $result['days'][] = [
+                    ...$result['days'][1],
+                    'day_number' => 3,
+                    'date' => '2026-08-12',
+                ];
 
                 return $result;
             }],
