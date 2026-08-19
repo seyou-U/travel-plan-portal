@@ -52,9 +52,20 @@ class User extends Authenticatable
         ];
     }
 
+    /**
+     * @return HasMany<TravelPlan, $this>
+     */
     public function travelPlans(): HasMany
     {
         return $this->hasMany(TravelPlan::class);
+    }
+
+    /**
+     * @return HasMany<AiPlanRequest, $this>
+     */
+    public function aiPlanRequests(): HasMany
+    {
+        return $this->hasMany(AiPlanRequest::class);
     }
 
     /**

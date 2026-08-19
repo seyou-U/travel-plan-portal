@@ -1,0 +1,326 @@
+<?php
+
+namespace Tests\Feature\Jobs;
+
+use App\Contracts\Ai\TravelPlanGenerator;
+use App\Enums\AiPlanRequestStatus;
+use App\Enums\GeminiErrorCode;
+use App\Exceptions\GeminiGenerationException;
+use App\Exceptions\GeminiInvalidJsonException;
+use App\Exceptions\GeminiOutputValidationException;
+use App\Jobs\GenerateAiTravelPlanJob;
+use App\Models\AiPlanRequest;
+use App\Models\AiPlanResult;
+use App\Models\User;
+use App\Services\Ai\FakeTravelPlanGenerator;
+use App\Services\Ai\GeminiTravelPlanGenerator;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
+use PHPUnit\Framework\Attributes\DataProvider;
+use RuntimeException;
+use Tests\TestCase;
+
+class GenerateAiTravelPlanJobTest extends TestCase
+{
+    use RefreshDatabase;
+
+    public function test_generator_contract_resolves_to_gemini_implementation(): void
+    {
+        $this->assertInstanceOf(
+            GeminiTravelPlanGenerator::class,
+            app(TravelPlanGenerator::class),
+        );
+    }
+
+    public function test_queue_execution_limits_match_retry_policy(): void
+    {
+        $job = new GenerateAiTravelPlanJob(1);
+
+        $this->assertSame(3, $job->tries);
+        $this->assertSame(60, $job->timeout);
+        $this->assertSame([10, 30], $job->backoff());
+    }
+
+    public function test_job_generates_result_and_completes_request_without_duplicates(): void
+    {
+        $aiPlanRequest = $this->createAiPlanRequest();
+        $generator = new class($aiPlanRequest->id) implements TravelPlanGenerator
+        {
+            public ?AiPlanRequestStatus $statusDuringGeneration = null;
+
+            public int $calls = 0;
+
+            public function __construct(private int $aiPlanRequestId) {}
+
+            public function generate(array $requestPayload): array
+            {
+                $this->calls++;
+                $aiPlanRequest = AiPlanRequest::query()->findOrFail($this->aiPlanRequestId);
+                $this->statusDuringGeneration = AiPlanRequestStatus::from(
+                    (string) $aiPlanRequest->getRawOriginal('status'),
+                );
+
+                return (new FakeTravelPlanGenerator)->generate($requestPayload);
+            }
+        };
+        $job = new GenerateAiTravelPlanJob($aiPlanRequest->id);
+
+        $job->handle($generator);
+
+        $aiPlanRequest->refresh();
+        $result = AiPlanResult::query()->sole();
+        $firstResultId = $result->id;
+
+        $this->assertSame(AiPlanRequestStatus::Processing, $generator->statusDuringGeneration);
+        $this->assertSame(AiPlanRequestStatus::Completed, $aiPlanRequest->status);
+        $this->assertNotNull($aiPlanRequest->started_at);
+        $this->assertNotNull($aiPlanRequest->completed_at);
+        $this->assertNull($aiPlanRequest->failed_at);
+        $this->assertNull($aiPlanRequest->error_code);
+        $this->assertNull($aiPlanRequest->error_message);
+        $this->assertIsArray($result->result_payload);
+        $this->assertSame('京都府', $result->result_payload['destination']);
+        $this->assertSame(100000, $result->result_payload['estimated_budget']);
+        $this->assertCount(3, $result->result_payload['days']);
+        $this->assertSame([
+            'sort_order',
+            'item_type',
+            'title',
+            'start_time',
+            'stay_minutes',
+            'visit_cost',
+            'transportation_type',
+            'transportation_cost',
+            'memo',
+        ], array_keys($result->result_payload['days'][0]['items'][0]));
+
+        $job->handle($generator);
+
+        $this->assertSame(1, $generator->calls);
+        $this->assertDatabaseCount('ai_plan_results', 1);
+        $this->assertSame($firstResultId, AiPlanResult::query()->sole()->id);
+    }
+
+    public function test_failed_callback_marks_request_as_failed_after_generator_exception(): void
+    {
+        $aiPlanRequest = $this->createAiPlanRequest();
+        $generator = new class implements TravelPlanGenerator
+        {
+            public function generate(array $requestPayload): array
+            {
+                throw new RuntimeException('Fake generator failed.');
+            }
+        };
+        $job = new GenerateAiTravelPlanJob($aiPlanRequest->id);
+        $exception = null;
+
+        try {
+            $job->handle($generator);
+        } catch (RuntimeException $caught) {
+            $exception = $caught;
+        }
+
+        $this->assertInstanceOf(RuntimeException::class, $exception);
+        $this->assertSame(
+            AiPlanRequestStatus::Processing,
+            $aiPlanRequest->refresh()->status,
+        );
+
+        $job->failed($exception);
+        $aiPlanRequest->refresh();
+
+        $this->assertSame(AiPlanRequestStatus::Failed, $aiPlanRequest->status);
+        $this->assertNotNull($aiPlanRequest->failed_at);
+        $this->assertNull($aiPlanRequest->completed_at);
+        $this->assertSame('AI_PLAN_GENERATION_FAILED', $aiPlanRequest->error_code);
+        $this->assertSame('Fake generator failed.', $aiPlanRequest->error_message);
+        $this->assertDatabaseCount('ai_plan_results', 0);
+    }
+
+    #[DataProvider('nonRetryableGeminiErrorProvider')]
+    public function test_non_retryable_gemini_error_fails_job_immediately(
+        GeminiErrorCode $errorCode,
+    ): void {
+        $aiPlanRequest = $this->createAiPlanRequest();
+        $exception = new GeminiGenerationException(
+            $errorCode,
+            false,
+            '再試行しないGeminiエラーです。',
+        );
+        $generator = new class($exception) implements TravelPlanGenerator
+        {
+            public function __construct(private GeminiGenerationException $exception) {}
+
+            public function generate(array $requestPayload): array
+            {
+                throw $this->exception;
+            }
+        };
+        $job = (new GenerateAiTravelPlanJob($aiPlanRequest->id))
+            ->withFakeQueueInteractions();
+
+        $job->handle($generator);
+
+        $job
+            ->assertFailedWith($exception)
+            ->assertNotReleased();
+
+        $job->failed($exception);
+        $aiPlanRequest->refresh();
+
+        $this->assertSame(AiPlanRequestStatus::Failed, $aiPlanRequest->status);
+        $this->assertSame($errorCode->value, $aiPlanRequest->error_code);
+        $this->assertNull($aiPlanRequest->completed_at);
+        $this->assertDatabaseCount('ai_plan_results', 0);
+    }
+
+    /**
+     * @return array<string, array{GeminiErrorCode}>
+     */
+    public static function nonRetryableGeminiErrorProvider(): array
+    {
+        return [
+            '400 Bad Request' => [GeminiErrorCode::BadRequest],
+            '401 Unauthorized' => [GeminiErrorCode::Unauthorized],
+            '403 Forbidden' => [GeminiErrorCode::Forbidden],
+        ];
+    }
+
+    #[DataProvider('invalidGeneratedOutputProvider')]
+    public function test_invalid_generated_output_is_not_retried_or_persisted(
+        GeminiGenerationException $exception,
+        GeminiErrorCode $expectedErrorCode,
+    ): void {
+        $aiPlanRequest = $this->createAiPlanRequest();
+        $generator = new class($exception) implements TravelPlanGenerator
+        {
+            public function __construct(private GeminiGenerationException $exception) {}
+
+            public function generate(array $requestPayload): array
+            {
+                throw $this->exception;
+            }
+        };
+        $job = (new GenerateAiTravelPlanJob($aiPlanRequest->id))
+            ->withFakeQueueInteractions();
+
+        $job->handle($generator);
+
+        $job
+            ->assertFailedWith($exception)
+            ->assertNotReleased();
+
+        $job->failed($exception);
+        $aiPlanRequest->refresh();
+
+        $this->assertSame(AiPlanRequestStatus::Failed, $aiPlanRequest->status);
+        $this->assertSame(
+            $expectedErrorCode->value,
+            $aiPlanRequest->error_code,
+        );
+        $this->assertNotNull($aiPlanRequest->failed_at);
+        $this->assertDatabaseCount('ai_plan_results', 0);
+    }
+
+    /**
+     * @return array<string, array{GeminiGenerationException, GeminiErrorCode}>
+     */
+    public static function invalidGeneratedOutputProvider(): array
+    {
+        return [
+            'invalid JSON' => [
+                new GeminiInvalidJsonException,
+                GeminiErrorCode::InvalidJson,
+            ],
+            'output validation failure' => [
+                new GeminiOutputValidationException([
+                    'result.title' => ['タイトルは必須です。'],
+                ]),
+                GeminiErrorCode::OutputValidationFailed,
+            ],
+        ];
+    }
+
+    #[DataProvider('retryableGeminiErrorProvider')]
+    public function test_retryable_gemini_error_is_rethrown_for_queue_retry(
+        GeminiErrorCode $errorCode,
+    ): void {
+        $aiPlanRequest = $this->createAiPlanRequest();
+        $exception = new GeminiGenerationException(
+            $errorCode,
+            true,
+            '再試行可能なGeminiエラーです。',
+        );
+        $generator = new class($exception) implements TravelPlanGenerator
+        {
+            public function __construct(private GeminiGenerationException $exception) {}
+
+            public function generate(array $requestPayload): array
+            {
+                throw $this->exception;
+            }
+        };
+        $job = (new GenerateAiTravelPlanJob($aiPlanRequest->id))
+            ->withFakeQueueInteractions();
+        $caught = null;
+
+        try {
+            $job->handle($generator);
+        } catch (GeminiGenerationException $thrown) {
+            $caught = $thrown;
+        }
+
+        $this->assertSame($exception, $caught);
+        $job
+            ->assertNotFailed()
+            ->assertNotReleased();
+        $this->assertSame(
+            AiPlanRequestStatus::Processing,
+            $aiPlanRequest->refresh()->status,
+        );
+        $this->assertDatabaseCount('ai_plan_results', 0);
+    }
+
+    /**
+     * @return array<string, array{GeminiErrorCode}>
+     */
+    public static function retryableGeminiErrorProvider(): array
+    {
+        return [
+            '429 Rate Limited' => [GeminiErrorCode::RateLimited],
+            '5xx Server Error' => [GeminiErrorCode::ServerError],
+            'connection timeout' => [GeminiErrorCode::ConnectionTimeout],
+            'connection failure' => [GeminiErrorCode::ConnectionFailed],
+        ];
+    }
+
+    private function createAiPlanRequest(): AiPlanRequest
+    {
+        $user = User::query()->create([
+            'uuid' => (string) Str::uuid(),
+            'name' => 'テストユーザー',
+            'email' => Str::uuid().'@example.com',
+            'password' => 'password',
+        ]);
+
+        /** @var AiPlanRequest */
+        return $user->aiPlanRequests()->create([
+            'status' => AiPlanRequestStatus::Queued,
+            'request_payload' => [
+                'prefecture' => '26',
+                'start_date' => '2026-08-10',
+                'end_date' => '2026-08-12',
+                'departure_location' => '東京',
+                'number_of_people' => 2,
+                'budget' => 100000,
+                'transport_priority' => 'おまかせ',
+                'preferences' => [
+                    '寺社を巡りたい',
+                    '京都らしい料理を食べたい',
+                ],
+                'notes' => '移動時間を短めにしたい',
+            ],
+            'provider' => 'gemini',
+        ]);
+    }
+}

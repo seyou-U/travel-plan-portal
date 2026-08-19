@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Contracts\Ai\TravelPlanGenerator;
+use App\Services\Ai\GeminiTravelPlanGenerator;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -14,7 +16,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind(
+            TravelPlanGenerator::class,
+            GeminiTravelPlanGenerator::class,
+        );
     }
 
     /**

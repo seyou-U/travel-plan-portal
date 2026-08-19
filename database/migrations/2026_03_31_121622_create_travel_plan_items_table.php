@@ -14,18 +14,25 @@ return new class extends Migration
         Schema::create('travel_plan_items', function (Blueprint $table) {
             $table->id();
             $table->foreignId('travel_plan_day_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('spot_id')->nullable()->constrained()->cascadeOnDelete();
+            $table->foreignId('spot_id')->nullable()->constrained()->nullOnDelete();
+            $table->unsignedInteger('sort_order');
             $table->string('title');
-            $table->string('spot_name');
+            $table->string('spot_name')->nullable();
             $table->time('start_time');
-            $table->unsignedSmallInteger('stay_minutes');
-            $table->unsignedTinyInteger('transportation_type');
-            $table->unsignedSmallInteger('travel_minutes')->nullable();
-            $table->unsignedInteger('transportation_cost')->nullable();
-            $table->unsignedInteger('visit_cost')->nullable();
+            $table->unsignedSmallInteger('stay_minutes')->default(0);
+            $table->string('transportation_type', 20)->nullable();
+            $table->unsignedSmallInteger('travel_minutes')->default(0);
+            $table->unsignedInteger('transportation_cost')->default(0);
+            $table->unsignedInteger('visit_cost')->default(0);
             $table->string('memo')->nullable();
+            $table->string('item_type', 20);
             $table->timestamps();
             $table->softDeletes();
+
+            $table->index(
+                ['travel_plan_day_id', 'sort_order'],
+                'travel_plan_day_sort_order_index',
+            );
         });
     }
 
