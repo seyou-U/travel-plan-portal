@@ -31,6 +31,19 @@ jobs:
       - name: Install Copilot CLI
         run: npm install -g @github/copilot
 
+      - name: Detect test files
+        id: tests
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if git diff --name-only "$BASE_SHA...$HEAD_SHA" \
+            | grep -E '(^|/)(tests?/|.*(Test|Spec)\.(php|js|ts|tsx)|.*\.(test|spec)\.(js|ts|tsx))' >/dev/null; then
+            echo "has_tests=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_tests=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Create PR diff
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
@@ -54,8 +67,16 @@ jobs:
 
       - name: Create prompt
         if: steps.diff.outputs.has_diff == 'true'
+        env:
+          HAS_TESTS: ${{ steps.tests.outputs.has_tests }}
         run: |
-          cat <<'EOF' > prompt.txt
+          if [ "$HAS_TESTS" = "true" ]; then
+            TEST_SECTION=$'### テスト\n- 追加・変更されたテスト内容\n- ローカル環境にて動作確認済み'
+          else
+            TEST_SECTION=$'### テスト\n- なし\n- ローカル環境にて動作確認済み'
+          fi
+
+          cat <<EOF > prompt.txt
           以下はPull RequestのGit差分です。
 
           レビュー担当者が変更内容を短時間で理解できるよう、
@@ -67,8 +88,7 @@ jobs:
           ### 主な変更ファイル
           - `ファイル名`: 変更内容
 
-          ### テスト
-          - 追加・変更されたテスト内容 (テストの追加・変更がある場合は記載。ない場合は「- なし」と記載）
+          ${TEST_SECTION}
 
           ルール:
           - Git差分から確認できる事実だけを書く
