@@ -33,6 +33,16 @@ class GeminiTravelPlanGenerator implements TravelPlanGenerator
      */
     public function generate(array $requestPayload): array
     {
+        $costManager = app(AiCostManager::class);
+
+        if (! $costManager->canCreate()) {
+            throw new GeminiGenerationException(
+                GeminiErrorCode::RateLimited,
+                false,
+                '無料枠の上限に達したため、AI旅程の生成を開始できません。',
+            );
+        }
+
         $apiKey = $this->requiredStringConfig('services.gemini.api_key', GeminiErrorCode::ApiKeyMissing);
         $model = $this->requiredStringConfig('services.gemini.model');
         $endpoint = $this->requiredStringConfig('services.gemini.endpoint');
@@ -78,7 +88,10 @@ class GeminiTravelPlanGenerator implements TravelPlanGenerator
             ]);
         }
 
-        return $this->resultValidator->validate($result, $requestPayload);
+        $validated = $this->resultValidator->validate($result, $requestPayload);
+        $costManager->recordUsage();
+
+        return $validated;
     }
 
     private function requiredStringConfig(

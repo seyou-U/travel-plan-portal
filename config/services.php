@@ -44,5 +44,6 @@ return [
         ),
         'connect_timeout' => (int) env('GEMINI_CONNECT_TIMEOUT', 10),
         'timeout' => (int) env('GEMINI_TIMEOUT', 50),
+        'daily_call_limit' => (int) env('GEMINI_DAILY_CALL_LIMIT', 50),
     ],
 ];
