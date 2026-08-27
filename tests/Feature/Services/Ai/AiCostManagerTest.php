@@ -19,7 +19,7 @@ class AiCostManagerTest extends TestCase
 
     public function test_it_allows_generation_until_daily_limit_is_reached(): void
     {
-        $manager = new AiCostManager();
+        $manager = new AiCostManager;
 
         $this->assertTrue($manager->canCreate());
         $this->assertSame(0, $manager->dailyUsage());
