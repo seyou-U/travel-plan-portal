@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\GenerateAiPlanController;
 use App\Http\Controllers\Api\ShowAiPlanRequestStatusController;
 use App\Http\Controllers\Api\ShowAiPlanResultController;
+use App\Http\Controllers\Api\StoreTravelPlanController;
 use App\Http\Controllers\AuthenticatedUserController;
 use App\Http\Controllers\ForgotPasswordController;
 use App\Http\Controllers\LoginController;
@@ -27,5 +28,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/ai/requests/{id}', ShowAiPlanRequestStatusController::class);
 
     Route::get('/plans', [TravelPlan::class, 'index']);
+    Route::post('/plans', StoreTravelPlanController::class);
     Route::get('/plans/{uuid}', [TravelPlan::class, 'show']);
 });
