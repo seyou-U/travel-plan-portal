@@ -23,8 +23,7 @@ export default function ForgotPasswordPage() {
     try {
       const response = await requestPasswordReset({ email });
       setSuccessMessage(
-        response?.message ??
-          '入力されたメールアドレスに、パスワード再設定メールを送信しました。',
+        response?.message ?? '入力されたメールアドレスに、パスワード再設定メールを送信しました。',
       );
     } catch (error) {
       setErrorMessage(
