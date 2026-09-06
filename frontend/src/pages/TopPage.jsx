@@ -1,3 +1,5 @@
+import { useNavigate } from 'react-router-dom';
+
 const DAYS = ['DAY 1', 'DAY 2', 'DAY 3', 'DAY 4'];
 
 const TIMELINE = [
@@ -38,6 +40,8 @@ const TIMELINE = [
 ];
 
 export default function TopPage() {
+  const navigate = useNavigate();
+
   return (
     <section className="relative min-h-screen bg-[#f3f6f8] p-4 sm:p-6">
       <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -142,6 +146,7 @@ export default function TopPage() {
 
       <button
         type="button"
+        onClick={() => navigate('/plans/new/manual')}
         className="fixed bottom-6 right-6 rounded-full bg-slate-900 px-5 py-3 text-xs font-bold text-white shadow-lg transition hover:bg-slate-700"
       >
         ＋ 予定を追加
