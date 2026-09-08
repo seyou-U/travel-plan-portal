@@ -6,8 +6,10 @@ import PublicHomeLayout from '../layouts/PublicHomeLayout';
 import ForgotPasswordPage from '../pages/ForgotPasswordPage';
 import HomePage from '../pages/HomePage';
 import LoginPage from '../pages/LoginPage';
+import ManualPlanCreatePage from '../pages/ManualPlanCreatePage';
 import MyPlanPage from '../pages/MyPlanPage';
 import RegisterPage from '../pages/RegisterPage';
+import PlanDraftEditorPage from '../pages/PlanDraftEditorPage';
 import ResetPasswordPage from '../pages/ResetPasswordPage';
 import SettingsPage from '../pages/SettingsPage';
 import TopPage from '../pages/TopPage';
@@ -61,6 +63,18 @@ export const router = createBrowserRouter([
           </RequireAuth>
         ),
         children: [{ index: true, element: <MyPlanPage /> }],
+      },
+      {
+        path: 'plans/new',
+        element: (
+          <RequireAuth>
+            <AppLayout />
+          </RequireAuth>
+        ),
+        children: [
+          { path: 'manual', element: <ManualPlanCreatePage /> },
+          { path: 'editor', element: <PlanDraftEditorPage /> },
+        ],
       },
       {
         path: 'settings',
