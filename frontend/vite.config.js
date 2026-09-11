@@ -6,6 +6,10 @@ const proxyTarget = process.env.VITE_PROXY_TARGET ?? 'http://localhost:8080'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  test: {
+    environment: 'jsdom',
+    setupFiles: './src/test/setup.js',
+  },
   server: {
     port: 5173,
     strictPort: true,
