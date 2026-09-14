@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { PREFECTURE_CODES } from '../constants/prefectures';
 import { addDaysToDate } from '../utils/travelPlanDates';
+import { isValidDraftItem } from '../utils/travelPlanItems';
 import { TravelPlanDraftContext } from './travel-plan-draft-context';
 
 export const TRAVEL_PLAN_DRAFT_STORAGE_KEY = 'travel-plan-draft:v1';
@@ -29,7 +30,8 @@ function isValidDraft(value) {
         day.day_number === index + 1 &&
         typeof day.prefecture_code === 'string' &&
         (day.prefecture_code === '' || PREFECTURE_CODES.has(day.prefecture_code)) &&
-        Array.isArray(day.items),
+        Array.isArray(day.items) &&
+        day.items.every(isValidDraftItem),
     )
   );
 }
@@ -107,6 +109,19 @@ export function TravelPlanDraftProvider({ children }) {
       );
     };
 
+    const addItem = (dayNumber, item) => {
+      setDraft((current) =>
+        current
+          ? {
+              ...current,
+              days: current.days.map((day) =>
+                day.day_number === dayNumber ? { ...day, items: [...day.items, item] } : day,
+              ),
+            }
+          : current,
+      );
+    };
+
     const discardDraft = () => {
       setDraft(null);
       setSelectedDayNumber(1);
@@ -120,6 +135,7 @@ export function TravelPlanDraftProvider({ children }) {
       updateBasicInfo,
       selectDay,
       updateDayPrefecture,
+      addItem,
       discardDraft,
     };
   }, [draft, selectedDayNumber]);
