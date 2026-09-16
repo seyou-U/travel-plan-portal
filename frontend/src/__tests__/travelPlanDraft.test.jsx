@@ -102,9 +102,7 @@ describe('旅行プランDraftフロー', () => {
     });
   });
 
-  it('sessionStorageからDraftを復元し、保存ボタンから通信しない', async () => {
-    const user = userEvent.setup();
-    const fetchSpy = vi.spyOn(globalThis, 'fetch');
+  it('sessionStorageからDraftを復元して保存ボタンを有効にする', () => {
     sessionStorage.setItem(
       TRAVEL_PLAN_DRAFT_STORAGE_KEY,
       JSON.stringify({
@@ -122,10 +120,7 @@ describe('旅行プランDraftフロー', () => {
     renderDraftRoutes('/plans/new/editor');
     expect(screen.getByText('復元する旅行')).toBeInTheDocument();
     expect(screen.getByText('2026年12月30日〜2026年12月31日')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /まとめて保存/ })).toBeDisabled();
-    await user.click(screen.getByRole('button', { name: /まとめて保存/ }));
-    expect(fetchSpy).not.toHaveBeenCalled();
-    fetchSpy.mockRestore();
+    expect(screen.getByRole('button', { name: 'まとめて保存' })).toBeEnabled();
   });
 
   it('Draftがない、または保存データが不正なら手動作成画面へ戻る', () => {
