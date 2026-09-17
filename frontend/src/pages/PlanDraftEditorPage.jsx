@@ -1,14 +1,38 @@
+import { useCallback, useRef, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
+import { PlanItemCard } from '../components/plans/PlanItemCard';
+import { PlanItemModal } from '../components/plans/PlanItemModal';
 import { PREFECTURES } from '../constants/prefectures';
 import { useTravelPlanDraft } from '../contexts/useTravelPlanDraft';
+import { storeTravelPlan } from '../features/plans/plans';
 import { addDaysToDate, calculateEndDate, formatJapaneseDate } from '../utils/travelPlanDates';
+import {
+  buildStorePlanPayload,
+  formatApiValidationErrors,
+  validateDraftForSave,
+} from '../utils/travelPlanItems';
 
 export default function PlanDraftEditorPage() {
   const navigate = useNavigate();
-  const { draft, selectedDayNumber, selectedDay, selectDay, updateDayPrefecture } =
-    useTravelPlanDraft();
+  const {
+    draft,
+    selectedDayNumber,
+    selectedDay,
+    selectDay,
+    updateDayPrefecture,
+    addItem,
+    discardDraft,
+  } = useTravelPlanDraft();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveErrors, setSaveErrors] = useState([]);
+  const savingRef = useRef(false);
+  const saveCompletedRef = useRef(false);
+
+  const closeModal = useCallback(() => setIsModalOpen(false), []);
 
   if (!draft) {
+    if (saveCompletedRef.current) return null;
     return (
       <Navigate
         to="/plans/new/manual"
@@ -20,6 +44,50 @@ export default function PlanDraftEditorPage() {
 
   const selectedDate = addDaysToDate(draft.start_date, selectedDayNumber - 1);
   const endDate = calculateEndDate(draft.start_date, draft.days_count);
+
+  const handleAddItem = (item) => {
+    addItem(selectedDayNumber, item);
+    setIsModalOpen(false);
+    setSaveErrors([]);
+  };
+
+  const handleSave = async () => {
+    if (savingRef.current) return;
+    const validationErrors = validateDraftForSave(draft);
+    setSaveErrors(validationErrors);
+    if (validationErrors.length > 0) return;
+
+    savingRef.current = true;
+    setIsSaving(true);
+    try {
+      const response = await storeTravelPlan(buildStorePlanPayload(draft));
+      saveCompletedRef.current = true;
+      discardDraft();
+      navigate('/plan', {
+        replace: true,
+        state: {
+          successMessage: '旅行プランを保存しました。',
+          createdPlanUuid: response.uuid,
+        },
+      });
+    } catch (error) {
+      if (error.status === 422) {
+        const validationMessages = formatApiValidationErrors(error.data?.errors);
+        setSaveErrors(
+          validationMessages.length > 0
+            ? validationMessages
+            : ['入力内容を確認して、もう一度保存してください。'],
+        );
+      } else if (error.status === 401) {
+        setSaveErrors(['認証の有効期限が切れました。再度ログインしてください。']);
+      } else {
+        setSaveErrors(['保存に失敗しました。通信状況を確認して、もう一度お試しください。']);
+      }
+    } finally {
+      savingRef.current = false;
+      setIsSaving(false);
+    }
+  };
 
   return (
     <section className="relative min-h-screen bg-[#f5f7f8] pb-28">
@@ -51,11 +119,11 @@ export default function PlanDraftEditorPage() {
           </div>
           <button
             type="button"
-            disabled
-            title="保存APIとの接続は次工程で実装予定です"
-            className="cursor-not-allowed rounded-xl bg-teal-700 px-5 py-2.5 text-sm font-bold text-white opacity-45"
+            onClick={handleSave}
+            disabled={isSaving}
+            className="rounded-xl bg-teal-700 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            まとめて保存（次工程）
+            {isSaving ? '保存中...' : 'まとめて保存'}
           </button>
         </div>
 
@@ -101,6 +169,16 @@ export default function PlanDraftEditorPage() {
       </div>
 
       <main className="mx-auto max-w-3xl px-4 py-9 sm:px-7 sm:py-12">
+        {saveErrors.length > 0 ? (
+          <div role="alert" className="mb-6 rounded-xl border border-rose-200 bg-rose-50 p-4">
+            <p className="text-sm font-bold text-rose-700">保存できない項目があります</p>
+            <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-rose-700">
+              {saveErrors.map((message) => (
+                <li key={message}>{message}</li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
         <div className="text-center">
           <p className="text-xs font-bold tracking-[0.14em] text-teal-700">
             DAY {selectedDayNumber}
@@ -118,21 +196,34 @@ export default function PlanDraftEditorPage() {
             </div>
             <h3 className="mt-4 text-base font-black text-slate-800">まだ予定がありません</h3>
             <p className="mt-2 text-sm text-slate-500">
-              予定の追加は次の工程で利用できるようになります。
+              右下のボタンから、この日の予定を追加できます。
             </p>
           </div>
-        ) : null}
+        ) : (
+          <div className="mt-9 space-y-4">
+            {selectedDay?.items.map((item, index) => (
+              <PlanItemCard key={`${item.start_time}-${item.title}-${index}`} item={item} />
+            ))}
+          </div>
+        )}
       </main>
 
       <button
         type="button"
-        disabled
-        aria-disabled="true"
-        title="予定追加は次工程で実装予定です"
-        className="fixed bottom-6 right-6 cursor-not-allowed rounded-full bg-slate-900 px-5 py-3 text-sm font-bold text-white opacity-60 shadow-lg"
+        onClick={() => setIsModalOpen(true)}
+        className="fixed bottom-6 right-6 rounded-full bg-slate-900 px-5 py-3 text-sm font-bold text-white shadow-lg transition hover:bg-slate-700"
       >
         ＋ 予定を追加
       </button>
+
+      {isModalOpen ? (
+        <PlanItemModal
+          dayNumber={selectedDayNumber}
+          date={selectedDate}
+          onAdd={handleAddItem}
+          onClose={closeModal}
+        />
+      ) : null}
     </section>
   );
 }
