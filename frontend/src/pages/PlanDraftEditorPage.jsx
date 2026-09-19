@@ -1,38 +1,28 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { PlanItemCard } from '../components/plans/PlanItemCard';
 import { PlanItemModal } from '../components/plans/PlanItemModal';
 import { PREFECTURES } from '../constants/prefectures';
 import { useTravelPlanDraft } from '../contexts/useTravelPlanDraft';
-import { storeTravelPlan } from '../features/plans/plans';
+import { useTravelPlanSave } from '../hooks/useTravelPlanSave';
 import { addDaysToDate, calculateEndDate, formatJapaneseDate } from '../utils/travelPlanDates';
-import {
-  buildStorePlanPayload,
-  formatApiValidationErrors,
-  validateDraftForSave,
-} from '../utils/travelPlanItems';
 
 export default function PlanDraftEditorPage() {
   const navigate = useNavigate();
-  const {
-    draft,
-    selectedDayNumber,
-    selectedDay,
-    selectDay,
-    updateDayPrefecture,
-    addItem,
-    discardDraft,
-  } = useTravelPlanDraft();
+  const { draft, selectedDayNumber, selectedDay, selectDay, updateDayPrefecture, addItem } =
+    useTravelPlanDraft();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [saveErrors, setSaveErrors] = useState([]);
-  const savingRef = useRef(false);
-  const saveCompletedRef = useRef(false);
+  const [saveCompleted, setSaveCompleted] = useState(false);
+  const { isSaving, saveErrors, setSaveErrors, saveTravelPlan } = useTravelPlanSave({
+    beforeDiscard: () => {
+      setSaveCompleted(true);
+    },
+  });
 
   const closeModal = useCallback(() => setIsModalOpen(false), []);
 
   if (!draft) {
-    if (saveCompletedRef.current) return null;
+    if (saveCompleted) return null;
     return (
       <Navigate
         to="/plans/new/manual"
@@ -49,44 +39,6 @@ export default function PlanDraftEditorPage() {
     addItem(selectedDayNumber, item);
     setIsModalOpen(false);
     setSaveErrors([]);
-  };
-
-  const handleSave = async () => {
-    if (savingRef.current) return;
-    const validationErrors = validateDraftForSave(draft);
-    setSaveErrors(validationErrors);
-    if (validationErrors.length > 0) return;
-
-    savingRef.current = true;
-    setIsSaving(true);
-    try {
-      const response = await storeTravelPlan(buildStorePlanPayload(draft));
-      saveCompletedRef.current = true;
-      discardDraft();
-      navigate('/plan', {
-        replace: true,
-        state: {
-          successMessage: '旅行プランを保存しました。',
-          createdPlanUuid: response.uuid,
-        },
-      });
-    } catch (error) {
-      if (error.status === 422) {
-        const validationMessages = formatApiValidationErrors(error.data?.errors);
-        setSaveErrors(
-          validationMessages.length > 0
-            ? validationMessages
-            : ['入力内容を確認して、もう一度保存してください。'],
-        );
-      } else if (error.status === 401) {
-        setSaveErrors(['認証の有効期限が切れました。再度ログインしてください。']);
-      } else {
-        setSaveErrors(['保存に失敗しました。通信状況を確認して、もう一度お試しください。']);
-      }
-    } finally {
-      savingRef.current = false;
-      setIsSaving(false);
-    }
   };
 
   return (
@@ -119,7 +71,7 @@ export default function PlanDraftEditorPage() {
           </div>
           <button
             type="button"
-            onClick={handleSave}
+            onClick={() => saveTravelPlan(draft)}
             disabled={isSaving}
             className="rounded-xl bg-teal-700 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-50"
           >
