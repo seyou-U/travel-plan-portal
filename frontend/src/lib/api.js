@@ -26,7 +26,7 @@ export function setupCsrfCookie({ force = false } = {}) {
   return csrfPromise;
 }
 
-export async function apiFetch(path, { method = 'GET', body, _retried = false } = {}) {
+export async function apiFetch(path, { method = 'GET', body, signal, _retried = false } = {}) {
   await setupCsrfCookie();
 
   const csrfToken = getCsrfTokenFromCookie();
@@ -48,6 +48,7 @@ export async function apiFetch(path, { method = 'GET', body, _retried = false } 
     headers,
     body: body ? JSON.stringify(body) : undefined,
     credentials: 'include',
+    signal,
   });
 
   const text = await response.text();
@@ -56,7 +57,7 @@ export async function apiFetch(path, { method = 'GET', body, _retried = false } 
   // トークン切れなどで 419 が返った場合は、CSRF Cookie を再取得して1回だけ再試行する。
   if (response.status === 419 && !_retried) {
     await setupCsrfCookie({ force: true });
-    return apiFetch(path, { method, body, _retried: true });
+    return apiFetch(path, { method, body, signal, _retried: true });
   }
 
   if (!response.ok) {
