@@ -6,6 +6,9 @@ import PublicHomeLayout from '../layouts/PublicHomeLayout';
 import ForgotPasswordPage from '../pages/ForgotPasswordPage';
 import HomePage from '../pages/HomePage';
 import LoginPage from '../pages/LoginPage';
+import AiPlanCreatePage from '../pages/AiPlanCreatePage';
+import AiPlanLoadingPage from '../pages/AiPlanLoadingPage';
+import AiPlanResultPage from '../pages/AiPlanResultPage';
 import ManualPlanCreatePage from '../pages/ManualPlanCreatePage';
 import MyPlanPage from '../pages/MyPlanPage';
 import RegisterPage from '../pages/RegisterPage';
@@ -15,7 +18,7 @@ import SettingsPage from '../pages/SettingsPage';
 import TopPage from '../pages/TopPage';
 import { RedirectIfAuthed, RequireAuth } from './auth';
 
-export const router = createBrowserRouter([
+export const appRoutes = [
   {
     path: '/',
     element: <App />,
@@ -72,6 +75,9 @@ export const router = createBrowserRouter([
           </RequireAuth>
         ),
         children: [
+          { path: 'ai', element: <AiPlanCreatePage /> },
+          { path: 'ai/loading', element: <AiPlanLoadingPage /> },
+          { path: 'ai/result', element: <AiPlanResultPage /> },
           { path: 'manual', element: <ManualPlanCreatePage /> },
           { path: 'editor', element: <PlanDraftEditorPage /> },
         ],
@@ -87,6 +93,8 @@ export const router = createBrowserRouter([
       },
     ],
   },
-]);
+];
+
+export const router = createBrowserRouter(appRoutes);
 
 export default router;
