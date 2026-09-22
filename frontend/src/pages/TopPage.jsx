@@ -56,6 +56,7 @@ export default function TopPage() {
             </button>
             <button
               type="button"
+              onClick={() => navigate('/plans/new/ai')}
               className="rounded-full border border-slate-200 px-3 py-1.5 hover:bg-slate-50"
             >
               AIアシスタント
