@@ -2,6 +2,12 @@ import { useEffect, useMemo, useState } from 'react';
 import { PREFECTURE_CODES } from '../constants/prefectures';
 import { addDaysToDate } from '../utils/travelPlanDates';
 import { isValidDraftItem } from '../utils/travelPlanItems';
+import {
+  ensureDraftItemIds,
+  moveDraftItem,
+  moveDraftItemByOffset,
+  withDraftItemId,
+} from '../utils/planDraftItems';
 import { TravelPlanDraftContext } from './travel-plan-draft-context';
 
 export const TRAVEL_PLAN_DRAFT_STORAGE_KEY = 'travel-plan-draft:v1';
@@ -42,7 +48,7 @@ function restoreDraft() {
     if (!saved) return null;
 
     const parsed = JSON.parse(saved);
-    if (isValidDraft(parsed)) return parsed;
+    if (isValidDraft(parsed)) return ensureDraftItemIds(parsed);
   } catch {
     // 壊れたDraftは破棄して新規入力へ戻す。
   }
@@ -115,11 +121,21 @@ export function TravelPlanDraftProvider({ children }) {
           ? {
               ...current,
               days: current.days.map((day) =>
-                day.day_number === dayNumber ? { ...day, items: [...day.items, item] } : day,
+                day.day_number === dayNumber
+                  ? { ...day, items: [...day.items, withDraftItemId(item)] }
+                  : day,
               ),
             }
           : current,
       );
+    };
+
+    const moveItem = (itemId, destinationDayNumber, overItemId = null) => {
+      setDraft((current) => moveDraftItem(current, itemId, destinationDayNumber, overItemId));
+    };
+
+    const moveItemByOffset = (itemId, offset) => {
+      setDraft((current) => moveDraftItemByOffset(current, itemId, offset));
     };
 
     const discardDraft = () => {
@@ -136,6 +152,8 @@ export function TravelPlanDraftProvider({ children }) {
       selectDay,
       updateDayPrefecture,
       addItem,
+      moveItem,
+      moveItemByOffset,
       discardDraft,
     };
   }, [draft, selectedDayNumber]);
