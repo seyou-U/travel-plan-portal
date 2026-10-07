@@ -57,7 +57,7 @@ export default function AiPlanLoadingPage() {
 
   return (
     <section className="grid min-h-screen place-items-center bg-[#f1f6f7] px-4 py-10">
-      <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-7 text-center shadow-xl shadow-slate-900/5 sm:p-10">
+      <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-7 text-center shadow-2xl shadow-teal-950/10 sm:p-10">
         {errorMessage ? (
           <>
             <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-rose-50 text-2xl text-rose-600">
@@ -70,7 +70,7 @@ export default function AiPlanLoadingPage() {
             <button
               type="button"
               onClick={returnToForm}
-              className="mt-7 rounded-xl bg-teal-700 px-6 py-3 text-sm font-bold text-white hover:bg-teal-800"
+              className="mt-7 rounded-xl bg-teal-700 px-6 py-3 text-sm font-bold text-white hover:bg-teal-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:ring-offset-2"
             >
               入力画面へ戻る
             </button>

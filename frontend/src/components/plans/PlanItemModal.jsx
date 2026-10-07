@@ -67,7 +67,7 @@ export function PlanItemModal({ dayNumber, date, onAdd, onClose }) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="plan-item-modal-title"
-        className="my-auto w-full max-w-3xl overflow-hidden rounded-2xl bg-white shadow-2xl"
+        className="my-auto flex max-h-[calc(100dvh-2rem)] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
       >
         <header className="flex items-start justify-between border-b border-slate-200 px-5 py-4 sm:px-7">
           <div>
@@ -88,8 +88,8 @@ export function PlanItemModal({ dayNumber, date, onAdd, onClose }) {
           </button>
         </header>
 
-        <form onSubmit={handleSubmit} noValidate>
-          <div className="grid gap-5 px-5 py-5 sm:grid-cols-2 sm:px-7 sm:py-6">
+        <form onSubmit={handleSubmit} noValidate className="flex min-h-0 flex-1 flex-col">
+          <div className="grid min-h-0 flex-1 gap-5 overflow-y-auto px-5 py-5 sm:grid-cols-2 sm:px-7 sm:py-6">
             <div className="sm:col-span-2">
               <label htmlFor="item_type" className="text-sm font-bold text-slate-700">
                 予定種別
@@ -264,7 +264,7 @@ export function PlanItemModal({ dayNumber, date, onAdd, onClose }) {
             </div>
           </div>
 
-          <footer className="flex flex-col-reverse gap-3 border-t border-slate-200 bg-slate-50 px-5 py-4 sm:flex-row sm:justify-end sm:px-7">
+          <footer className="flex shrink-0 flex-col-reverse gap-3 border-t border-slate-200 bg-slate-50 px-5 py-4 sm:flex-row sm:justify-end sm:px-7">
             <button
               type="button"
               onClick={onClose}

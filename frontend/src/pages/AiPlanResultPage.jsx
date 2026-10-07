@@ -32,7 +32,7 @@ export default function AiPlanResultPage() {
   };
 
   return (
-    <section className="min-h-screen bg-[#f5f7f8] px-4 py-8 sm:px-7 lg:py-10">
+    <section className="min-h-screen bg-gradient-to-b from-teal-50/40 via-[#f5f7f8] to-[#f5f7f8] px-4 py-8 sm:px-7 lg:py-10">
       <div className="mx-auto max-w-4xl">
         <div className="rounded-2xl border border-teal-200 bg-teal-50 p-5">
           <p className="text-xs font-bold tracking-[0.14em] text-teal-700">AI PLAN RESULT</p>
@@ -84,7 +84,7 @@ export default function AiPlanResultPage() {
                     role="tab"
                     aria-selected={selectedDayNumber === day.day_number}
                     onClick={() => setSelectedDayNumber(day.day_number)}
-                    className={`shrink-0 border-b-2 px-4 py-2 text-sm font-bold ${selectedDayNumber === day.day_number ? 'border-teal-700 text-teal-700' : 'border-transparent text-slate-400'}`}
+                    className={`shrink-0 border-b-2 px-4 py-2 text-sm font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-teal-600 ${selectedDayNumber === day.day_number ? 'border-teal-700 bg-teal-50/60 text-teal-700' : 'border-transparent text-slate-500 hover:bg-slate-50'}`}
                   >
                     Day {day.day_number}
                   </button>

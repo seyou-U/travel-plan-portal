@@ -72,7 +72,7 @@ export default function AiPlanCreatePage() {
     ) : null;
 
   return (
-    <section className="min-h-screen bg-[#f5f7f8] px-4 py-8 sm:px-7 lg:py-12">
+    <section className="min-h-screen bg-gradient-to-b from-teal-50/50 via-[#f5f7f8] to-[#f5f7f8] px-4 py-8 sm:px-7 lg:py-12">
       <div className="mx-auto max-w-3xl">
         <p className="text-xs font-bold tracking-[0.16em] text-teal-700">AI TRAVEL PLANNER</p>
         <h1 className="mt-2 text-2xl font-black text-slate-900 sm:text-3xl">AIで旅程を作成</h1>
@@ -83,7 +83,7 @@ export default function AiPlanCreatePage() {
         <form
           onSubmit={handleSubmit}
           noValidate
-          className="mt-7 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-8"
+          className="mt-7 rounded-2xl border border-slate-200 bg-white p-5 shadow-lg shadow-slate-900/5 sm:p-8"
         >
           {requestError ? (
             <div
@@ -216,7 +216,7 @@ export default function AiPlanCreatePage() {
                     type="button"
                     aria-pressed={form.preferences.includes(preference)}
                     onClick={() => togglePreference(preference)}
-                    className={`rounded-full border px-3 py-1.5 text-xs font-bold transition ${form.preferences.includes(preference) ? 'border-teal-700 bg-teal-50 text-teal-700' : 'border-slate-200 text-slate-500 hover:border-teal-300'}`}
+                    className={`rounded-full border px-3 py-1.5 text-xs font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600 ${form.preferences.includes(preference) ? 'border-teal-700 bg-teal-50 text-teal-700' : 'border-slate-200 text-slate-500 hover:border-teal-300'}`}
                   >
                     {preference}
                   </button>
@@ -243,7 +243,7 @@ export default function AiPlanCreatePage() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="mt-7 w-full rounded-xl bg-teal-700 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-teal-700/20 transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-50"
+            className="mt-7 w-full rounded-xl bg-teal-700 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-teal-700/20 transition hover:bg-teal-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isSubmitting ? '生成依頼中...' : 'AIで旅程を生成する'}
           </button>
