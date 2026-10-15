@@ -49,4 +49,14 @@ class TravelPlanItemApiTest extends TestCase
             ->assertJsonPath('days.0.items.1.title', '観光スポットを見学')
             ->assertJsonPath('days.0.items.1.end_time', '10:00:00');
     }
+
+    public function test_user_cannot_get_another_users_plan(): void
+    {
+        $owner = User::factory()->create();
+        $otherUser = User::factory()->create();
+        $plan = TravelPlan::factory()->for($owner)->create();
+        Sanctum::actingAs($otherUser);
+
+        $this->getJson("/api/plans/{$plan->uuid}")->assertNotFound();
+    }
 }

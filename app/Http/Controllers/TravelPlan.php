@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\PrefectureCode;
 use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -92,7 +93,7 @@ class TravelPlan extends Controller
         }
     }
 
-    public function show($uuid)
+    public function show(string $uuid): JsonResponse
     {
         if (! Auth::check()) {
             return response()->json(['message' => '認証が必要です'], 401);
@@ -142,6 +143,9 @@ class TravelPlan extends Controller
                             : (int) $item->stay_minutes;
 
                         return [
+                            'sort_order' => (int) $item->sort_order,
+                            'spot_id' => $item->spot_id === null ? null : (int) $item->spot_id,
+                            'item_type' => $item->item_type,
                             'title' => $item->title,
                             'spot_name' => $item->spot_name,
                             'start_time' => $item->start_time,
@@ -149,9 +153,13 @@ class TravelPlan extends Controller
                                 ->addMinutes($durationMinutes)
                                 ->format('H:i:s'),
                             'transportation_type' => $item->transportation_type,
+                            'stay_minutes' => (int) $item->stay_minutes,
                             'travel_minutes' => (int) $item->travel_minutes,
+                            'transportation_cost' => (int) $item->transportation_cost,
+                            'visit_cost' => (int) $item->visit_cost,
+                            'memo' => $item->memo,
                         ];
-                    })->values();
+                    })->values()->all();
                 });
 
             $responseDays = $days->map(function ($day) use ($itemsByDay) {
@@ -159,8 +167,10 @@ class TravelPlan extends Controller
 
                 return [
                     'day_number' => (int) $day->day_number,
+                    'date' => Carbon::parse($day->date)->toDateString(),
+                    'prefecture_code' => $prefectureCode,
                     'prefecture_name' => PrefectureCode::labelFromCode($prefectureCode) ?? $prefectureCode,
-                    'items' => $itemsByDay->get($day->id, collect())->all(),
+                    'items' => $itemsByDay->get($day->id, []),
                 ];
             })->values()->all();
 
@@ -173,6 +183,7 @@ class TravelPlan extends Controller
                 'title' => $plan->title,
                 'start_date' => $plan->start_date,
                 'end_date' => $endDate,
+                'days_count' => (int) $plan->days_count,
                 'budget_per_person' => (int) $plan->budget_per_person,
                 'days' => $responseDays,
             ], 200);

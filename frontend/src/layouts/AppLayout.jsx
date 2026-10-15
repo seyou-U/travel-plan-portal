@@ -22,9 +22,9 @@ export default function AppLayout() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f3f6f8] text-slate-900 lg:grid lg:grid-cols-[248px_1fr]">
+    <div className="min-h-screen bg-[var(--color-page)] text-slate-900 lg:grid lg:grid-cols-[248px_minmax(0,1fr)]">
       <AppSideBar user={user} onLogout={handleLogout} isLoggingOut={isLoggingOut} />
-      <main className="min-h-screen overflow-x-hidden">
+      <main className="min-w-0 min-h-screen overflow-x-hidden">
         <Outlet />
       </main>
     </div>
