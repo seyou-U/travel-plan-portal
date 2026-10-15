@@ -1,5 +1,5 @@
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -139,7 +139,7 @@ describe('予定追加モーダルとDraft', () => {
     expect(screen.getByText('大阪へ移動')).toBeInTheDocument();
     expect(screen.getByLabelText('09:00から09:45')).toBeInTheDocument();
     const saved = JSON.parse(sessionStorage.getItem(TRAVEL_PLAN_DRAFT_STORAGE_KEY));
-    expect(saved.days[1].items[0]).toEqual({
+    expect(saved.days[1].items[0]).toMatchObject({
       spot_id: null,
       item_type: 'transport',
       title: '大阪へ移動',
@@ -248,5 +248,82 @@ describe('旅行プラン最終保存', () => {
     expect(await screen.findByText(/保存に失敗しました/)).toBeInTheDocument();
     expect(sessionStorage.getItem(TRAVEL_PLAN_DRAFT_STORAGE_KEY)).not.toBeNull();
     expect(screen.getByRole('button', { name: 'まとめて保存' })).toBeEnabled();
+  });
+});
+
+describe('予定の並び替え', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('代替操作で並び替え、sessionStorageと最終保存payloadへ配列順を反映する', async () => {
+    storeTravelPlan.mockResolvedValue({ uuid: 'uuid' });
+    const draft = validDraft();
+    const baseItem = {
+      spot_id: null,
+      item_type: 'spot',
+      spot_name: null,
+      stay_minutes: 60,
+      transportation_type: null,
+      travel_minutes: 0,
+      transportation_cost: 0,
+      visit_cost: 0,
+      memo: null,
+    };
+    draft.days[0].items = [
+      { ...baseItem, title: '予定A', start_time: '09:00' },
+      { ...baseItem, title: '予定B', start_time: '10:00' },
+    ];
+    const user = userEvent.setup();
+    renderEditor(draft);
+
+    const firstCard = screen.getByRole('heading', { name: '予定A' }).closest('article');
+    await user.click(within(firstCard).getByRole('button', { name: '↓ 下へ' }));
+
+    await waitFor(() => {
+      const stored = JSON.parse(sessionStorage.getItem(TRAVEL_PLAN_DRAFT_STORAGE_KEY));
+      expect(stored.days[0].items.map(({ title }) => title)).toEqual(['予定B', '予定A']);
+    });
+    expect(storeTravelPlan).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole('button', { name: 'まとめて保存' }));
+    await waitFor(() => expect(storeTravelPlan).toHaveBeenCalledTimes(1));
+    expect(storeTravelPlan.mock.calls[0][0].days[0].items.map(({ title }) => title)).toEqual([
+      '予定B',
+      '予定A',
+    ]);
+    expect(
+      storeTravelPlan.mock.calls[0][0].days[0].items.every((item) => !('_draft_id' in item)),
+    ).toBe(true);
+  });
+
+  it('別Dayボタンで空のDayへ移動する', async () => {
+    const draft = validDraft();
+    draft.days[0].items = [
+      {
+        spot_id: null,
+        item_type: 'spot',
+        title: 'Day間移動する予定',
+        spot_name: null,
+        start_time: '09:00',
+        stay_minutes: 60,
+        transportation_type: null,
+        travel_minutes: 0,
+        transportation_cost: 0,
+        visit_cost: 0,
+        memo: null,
+      },
+    ];
+    const user = userEvent.setup();
+    renderEditor(draft);
+
+    await user.click(screen.getByRole('button', { name: 'Day 2へ' }));
+
+    expect(screen.getByRole('tab', { name: 'Day 2' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByText('Day間移動する予定')).toBeInTheDocument();
+    const stored = JSON.parse(sessionStorage.getItem(TRAVEL_PLAN_DRAFT_STORAGE_KEY));
+    expect(stored.days[0].items).toEqual([]);
+    expect(stored.days[1].items[0].title).toBe('Day間移動する予定');
+    expect(storeTravelPlan).not.toHaveBeenCalled();
   });
 });
