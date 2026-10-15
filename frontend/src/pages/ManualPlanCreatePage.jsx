@@ -79,7 +79,7 @@ export default function ManualPlanCreatePage() {
     }`;
 
   return (
-    <section className="min-h-screen bg-[#f5f7f8] px-4 py-8 sm:px-7 lg:py-12">
+    <section className="min-h-screen bg-gradient-to-b from-teal-50/50 via-[#f5f7f8] to-[#f5f7f8] px-4 py-8 sm:px-7 lg:py-12">
       <div className="mx-auto max-w-3xl">
         <div className="mb-7">
           <p className="text-xs font-bold tracking-[0.16em] text-teal-700">MANUAL PLAN</p>
@@ -94,7 +94,7 @@ export default function ManualPlanCreatePage() {
         <form
           onSubmit={handleSubmit}
           noValidate
-          className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-8"
+          className="rounded-2xl border border-slate-200 bg-white p-5 shadow-lg shadow-slate-900/5 sm:p-8"
         >
           <div>
             <label htmlFor="title" className="text-sm font-bold text-slate-700">
@@ -208,13 +208,13 @@ export default function ManualPlanCreatePage() {
             <button
               type="button"
               onClick={() => navigate('/top')}
-              className="rounded-xl border border-slate-200 px-6 py-3 text-sm font-bold text-slate-600 transition hover:bg-slate-50"
+              className="rounded-xl border border-slate-200 px-6 py-3 text-sm font-bold text-slate-600 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600"
             >
               キャンセル
             </button>
             <button
               type="submit"
-              className="rounded-xl bg-teal-700 px-7 py-3 text-sm font-bold text-white shadow-lg shadow-teal-700/15 transition hover:bg-teal-800"
+              className="rounded-xl bg-teal-700 px-7 py-3 text-sm font-bold text-white shadow-lg shadow-teal-700/15 transition hover:bg-teal-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:ring-offset-2"
             >
               旅程の編集へ →
             </button>
